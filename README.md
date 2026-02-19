@@ -87,6 +87,7 @@ Este projeto utiliza **Docker**, o que torna a execução extremamente simples. 
 4.  **Aceder à Aplicação:**
     *   **Web App:** http://localhost:8080 (ou a porta configurada no docker-compose)
     *   **RabbitMQ Manager:** http://localhost:15672 (Login: guest / guest)
+    *   **Utilizador e Senha padrão para entrada no programa:** admin/admin (minúscolos) (pode ser configurado dentro do programa na parte de utilizadores) 
 
 ---
 
@@ -97,3 +98,4 @@ Este projeto utiliza **Docker**, o que torna a execução extremamente simples. 
 
 ---
 *Este projeto foi desenvolvido exclusivamente para fins académicos no âmbito da PAP.*
+*Projeto sujeito a atualizações futuras*
