@@ -1,0 +1,113 @@
+@page "/Utilizadores/Ver"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+
+@inject AuthService AuthService
+@inject UserSession session
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Gerir Utilizadores - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-page-header { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border-left: 5px solid var(--ff-cyan); }
+    .ff-table-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; border: none; }
+    .ff-thead { background-color: var(--ff-dark-blue); color: white; }
+    .ff-thead th { font-weight: 500; text-transform: uppercase; font-size: 0.75rem; padding: 15px; border: none; }
+    .ff-td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    
+    .ff-user-icon { width: 35px; height: 35px; background: #eef2f7; color: var(--ff-blue); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; }
+    .ff-btn-action { width: 35px; height: 35px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s; }
+</style>
+
+@if (!session.IsLoggedIn) { 
+    <div class="container mt-5">
+        <div class="alert alert-danger shadow-sm border-0 d-flex align-items-center">
+            <i class="bi bi-shield-slash fs-2 me-3"></i>
+            <div>
+                <h4 class="mb-0">Acesso Negado</h4>
+                <p class="mb-0 small">Inicie sessão para gerir os utilizadores do sistema.</p>
+            </div>
+        </div>
+    </div>
+}
+else {
+    <div class="container py-4">
+        <!-- CABEÇALHO -->
+        <div class="ff-page-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-lock-fill me-2 text-primary"></i>Controlo de Acessos</h3>
+                <p class="text-muted mb-0 small">Gira as credenciais e permissões dos utilizadores do FaturaFlow.</p>
+            </div>
+            <button class="btn btn-primary shadow-sm fw-bold px-4 py-2" style="background-color: var(--ff-cyan); border: none; color: var(--ff-dark-blue);" @onclick='() => Navigation.NavigateTo("/Utilizadores/Criar")'>
+                <i class="bi bi-person-plus-fill me-2"></i>NOVO UTILIZADOR
+            </button>
+        </div>
+
+        <!-- TABELA -->
+        <div class="ff-table-card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="ff-thead">
+                        <tr>
+                            <th>Identificação / Utilizador</th>
+                            <th>Endereço de E-mail</th>
+                            <th class="text-center">Ações de Gestão</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (users == null) { 
+                            <tr><td colspan="3" class="text-center p-5"><div class="spinner-border text-cyan"></div></td></tr> 
+                        }
+                        else if (!users.Any()) {
+                            <tr><td colspan="3" class="text-center p-5 text-muted">Nenhum utilizador registado além do administrador.</td></tr>
+                        }
+                        else {
+                            @foreach (var user in users) {
+                                <tr>
+                                    <td class="ff-td">
+                                        <div class="d-flex align-items-center">
+                                            <div class="ff-user-icon"><i class="bi bi-person-fill"></i></div>
+                                            <div class="fw-bold text-dark">@user.Username</div>
+                                        </div>
+                                    </td>
+                                    <td class="ff-td">
+                                        <span class="text-muted"><i class="bi bi-envelope me-2 opacity-50"></i>@(user.Email?.Value ?? "---")</span>
+                                    </td>
+                                    <td class="ff-td text-center">
+                                        <button class="btn btn-outline-primary ff-btn-action me-2" title="Editar Utilizador" @onclick='() => Navigation.NavigateTo($"/Utilizadores/Editar/{user.Id}")'>
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger ff-btn-action" title="Eliminar Acesso" @onclick="() => Delete(user)">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<User>? users;
+    protected override async Task OnInitializedAsync() {
+        if (session.IsLoggedIn) users = (await AuthService.GetAllUsersAsync()).ToList();
+    }
+    private async Task Delete(User u) {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Deseja remover permanentemente o acesso de '{u.Username}'?")) {
+            await AuthService.DeleteUserAsync(u.Id);
+            users = (await AuthService.GetAllUsersAsync()).ToList();
+        }
+    }
+}

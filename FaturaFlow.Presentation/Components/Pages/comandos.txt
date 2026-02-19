@@ -1,0 +1,24 @@
+@using ProjetoFaturacao.Services
+@inject UserSession UserSession 
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="text-center">
+            <h3>Acesso Negado</h3>
+            <p>Você precisa fazer login para acessar este painel.</p>
+            <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/login")'>Ir para Login</button>
+        </div>
+    </div>
+}
+else 
+{
+
+}
+
+if (!UserSession.IsLoggedIn)
+        {
+            // Se não estiver logado, redireciona imediatamente
+            Navigation.NavigateTo("/login");
+            return;
+        }

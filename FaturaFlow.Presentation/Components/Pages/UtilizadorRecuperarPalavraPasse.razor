@@ -1,0 +1,131 @@
+@page "/Utilizadores/Recuperar/{Email}"
+@layout LayoutVazio
+@using FaturaFlow.Application.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Redefinir Senha - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-recovery-bg {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top right, var(--ff-blue), var(--ff-dark-blue));
+        padding: 20px;
+    }
+
+    .ff-recovery-card {
+        width: 100%;
+        max-width: 450px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        animation: ff-slideUp 0.5s ease-out;
+    }
+
+    .ff-code-input {
+        letter-spacing: 8px;
+        font-weight: 700;
+        color: var(--ff-blue);
+        border: 2px solid #e2e8f0;
+        background: #f8fafc;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+
+    .ff-code-input:focus {
+        border-color: var(--ff-cyan);
+        background: white;
+        box-shadow: 0 0 0 4px rgba(0, 188, 212, 0.1);
+    }
+
+    .ff-input-icon {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .ff-input-icon i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--ff-blue);
+        opacity: 0.6;
+    }
+
+    .ff-input-icon .form-control {
+        padding-left: 45px;
+        height: 50px;
+        border-radius: 10px;
+    }
+
+    @@keyframes ff-slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="ff-recovery-bg">
+    <div class="ff-recovery-card">
+        <div class="p-4 p-md-5 text-center">
+            <div class="mb-4">
+                <i class="bi bi-shield-lock-fill text-info display-4" style="color: var(--ff-cyan) !important;"></i>
+            </div>
+            <h3 class="fw-bold text-dark">Redefinir Senha</h3>
+            <p class="text-muted small px-3">
+                Introduza o código enviado para <br />
+                <strong class="text-dark">@Email</strong>
+            </p>
+
+            <div class="mt-4">
+                <label class="form-label small fw-bold text-uppercase opacity-50">Código de Verificação</label>
+                <input type="text" class="form-control ff-code-input text-center fs-3 mb-4" @bind="code" placeholder="000000" maxlength="10" />
+                
+                <div class="ff-input-icon">
+                    <i class="bi bi-key-fill"></i>
+                    <input type="password" class="form-control" @bind="newPass" placeholder="Nova Palavra-Passe" />
+                </div>
+
+                <button class="btn btn-primary w-100 py-3 fw-bold shadow-sm" style="background-color: var(--ff-dark-blue); border: none;" @onclick="Reset">
+                    CONFIRMAR ALTERAÇÃO
+                </button>
+
+                <div class="mt-4">
+                    <button class="btn btn-link btn-sm text-decoration-none text-muted" @onclick='() => Navigation.NavigateTo("/login")'>
+                        <i class="bi bi-arrow-left me-1"></i> Voltar ao login
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(msg)) { 
+                    <div class="alert alert-danger mt-3 border-0 small shadow-sm animate__animated animate__shakeX">
+                        <i class="bi bi-exclamation-circle me-2"></i> @msg
+                    </div> 
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Email { get; set; } = "";
+    private string code = "", newPass = "", msg = "";
+    private async Task Reset() {
+        try {
+            if(string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(newPass)) {
+                msg = "Preencha o código e a nova senha.";
+                return;
+            }
+            await AuthService.ResetPasswordWithCodeAsync(Email, code, newPass);
+            Navigation.NavigateTo("/login");
+        } catch (Exception ex) { msg = ex.Message; }
+    }
+}

@@ -1,0 +1,84 @@
+@page "/Utilizadores/Criar"
+@using FaturaFlow.Application.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Novo Utilizador - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-create-card { border-radius: 20px; border: none; box-shadow: 0 15px 40px rgba(0,0,0,0.1); overflow: hidden; max-width: 500px; margin: auto; }
+    .ff-create-header { background: linear-gradient(135deg, var(--ff-dark-blue), var(--ff-blue)); color: white; padding: 2.5rem 2rem; text-align: center; }
+    .ff-icon-circle { width: 70px; height: 70px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; border: 2px solid var(--ff-cyan); }
+    
+    .ff-input-group { position: relative; margin-bottom: 1.5rem; }
+    .ff-input-group i { position: absolute; left: 15px; top: 40px; color: var(--ff-blue); opacity: 0.6; }
+    .ff-form-control { padding-left: 45px !important; height: 50px; border-radius: 10px; border: 1px solid #dee2e6; }
+    .ff-form-control:focus { border-color: var(--ff-cyan); box-shadow: 0 0 0 0.25rem rgba(0, 188, 212, 0.1); }
+</style>
+
+<div class="container py-5">
+    <div class="card ff-create-card animate__animated animate__fadeInUp">
+        <div class="ff-create-header">
+            <div class="ff-icon-circle">
+                <i class="bi bi-person-plus-fill" style="color: var(--ff-cyan);"></i>
+            </div>
+            <h3 class="fw-bold mb-1">Novo Utilizador</h3>
+            <p class="small opacity-75 mb-0">Crie uma nova conta de acesso ao sistema.</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <div class="ff-input-group">
+                <label class="form-label fw-bold small text-muted">Nome de Utilizador</label>
+                <i class="bi bi-person"></i>
+                <input type="text" class="form-control ff-form-control" @bind="username" placeholder="ex: jsilva" />
+            </div>
+
+            <div class="ff-input-group">
+                <label class="form-label fw-bold small text-muted">Endereço de E-mail</label>
+                <i class="bi bi-envelope-at"></i>
+                <input type="email" class="form-control ff-form-control" @bind="email" placeholder="email@faturaflow.com" />
+            </div>
+
+            <div class="ff-input-group">
+                <label class="form-label fw-bold small text-muted">Definir Palavra-Passe</label>
+                <i class="bi bi-lock"></i>
+                <input type="password" class="form-control ff-form-control" @bind="password" placeholder="********" />
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button class="btn btn-primary py-3 fw-bold shadow-sm" style="background-color: var(--ff-dark-blue); border: none;" @onclick="Save">
+                    CRIAR ACESSO AGORA
+                </button>
+                <button class="btn btn-link text-decoration-none text-muted fw-bold small mt-2" @onclick='() => Navigation.NavigateTo("/Utilizadores/Ver")'>
+                    CANCELAR E VOLTAR
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(msg)) { 
+                <div class="alert alert-danger mt-4 border-0 shadow-sm small">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @msg
+                </div> 
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string username = "", email = "", password = "", msg = "";
+    private async Task Save() {
+        try {
+            if(string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)) {
+                msg = "Utilizador e Palavra-passe são obrigatórios.";
+                return;
+            }
+            await AuthService.RegisterUserAsync(username, password, email);
+            Navigation.NavigateTo("/Utilizadores/Ver");
+        } catch (Exception ex) { msg = ex.Message; }
+    }
+}

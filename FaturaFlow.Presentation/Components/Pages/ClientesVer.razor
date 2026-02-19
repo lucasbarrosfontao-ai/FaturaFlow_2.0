@@ -1,0 +1,196 @@
+@page "/Clientes/Ver"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+@using System.Globalization
+
+@inject CustomerService CustomerService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject UserSession UserSession 
+
+<PageTitle>Clientes - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-page-header { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border-left: 5px solid var(--ff-blue); }
+    .ff-search-bar { background: #f1f5f9; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; }
+    .ff-table-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; border: none; }
+    .ff-thead { background-color: var(--ff-dark-blue); color: white; }
+    .ff-thead th { font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 15px; border: none; }
+    .ff-td { padding: 12px 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .ff-badge-nif { font-family: 'Monaco', 'Consolas', monospace; background: #e2e8f0; color: var(--ff-dark-blue); padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .ff-btn-action { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s; }
+</style>
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="container mt-5 text-center">
+        <div class="alert alert-warning shadow-sm p-5 rounded-4">
+            <i class="bi bi-shield-lock display-4 d-block mb-3"></i>
+            <h4 class="fw-bold">Acesso Negado</h4>
+            <p>Inicie sessão para gerir a base de dados de clientes.</p>
+            <button class="btn btn-primary px-4" @onclick='() => Navigation.NavigateTo("/login")'>Ir para Login</button>
+        </div>
+    </div>
+}
+else 
+{
+    <div class="container-fluid py-3">
+        <!-- CABEÇALHO -->
+        <div class="ff-page-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill me-2 text-primary"></i>Gestão de Clientes</h3>
+                <small class="text-muted">Visualize e edite as informações dos seus parceiros de negócio.</small>
+            </div>
+            <button class="btn btn-primary shadow-sm fw-bold py-2 px-4" @onclick="CreateNew">
+                <i class="bi bi-person-plus-fill me-2"></i>NOVO CLIENTE
+            </button>
+        </div>
+
+        <!-- BARRA DE PESQUISA -->
+        <div class="ff-search-bar shadow-sm">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-2">
+                    <select class="form-select border-0 shadow-sm" @bind="searchField">
+                        <option value="Nome">Nome</option>
+                        <option value="NIF">NIF</option>
+                        <option value="Email">Email</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group shadow-sm rounded-2 overflow-hidden">
+<input type="text" class="form-control border-0" placeholder="O que procura?" @bind="searchText" @bind:event="oninput" @onkeyup='async (e) => { if(e.Key == "Enter") await Search(); }' />
+                        <button class="btn btn-white bg-white border-0 text-primary" @onclick="Search"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-auto">
+                    <button class="btn btn-link text-decoration-none text-muted fw-bold small" @onclick="Clear">Limpar Filtros</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA -->
+        <div class="ff-table-card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="ff-thead">
+                        <tr>
+                            <th>Nome do Cliente</th>
+                            <th>NIF</th>
+                            <th>Contacto / Email</th>
+                            <th>Localidade</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (clientList == null)
+                        {
+                            <tr><td colspan="5" class="text-center p-5"><div class="spinner-border text-cyan"></div></td></tr>
+                        }
+                        else if (!clientList.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center p-5">
+                                    <i class="bi bi-search display-6 text-muted opacity-25 d-block mb-3"></i>
+                                    <span class="text-muted">Nenhum cliente corresponde à sua pesquisa.</span>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var client in clientList)
+                            {
+                                <tr>
+                                    <td class="ff-td fw-bold text-dark">@client.Name</td>
+                                    <td class="ff-td"><span class="ff-badge-nif">@client.NIF.Value</span></td>
+                                    <td class="ff-td">
+                                        <div class="small fw-semibold text-dark">@(client.Phone?.Value ?? "---")</div>
+                                        <div class="small text-muted">@(client.Email?.Value ?? "---")</div>
+                                    </td>
+                                    <td class="ff-td">
+                                        <span class="small text-secondary"><i class="bi bi-geo-alt me-1"></i>@client.City</span>
+                                    </td>
+                                    <td class="ff-td text-center">
+                                        <button class="btn btn-outline-primary ff-btn-action me-1" title="Editar" @onclick="() => EditClient(client.Id)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger ff-btn-action" title="Eliminar" @onclick="() => ConfirmDelete(client)">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    private List<Customer>? clientList;
+    private string searchField = "Nome"; 
+    private string searchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserSession.IsLoggedIn) return;
+        await LoadClients();
+    }
+
+    private async Task LoadClients()
+    {
+        var all = await CustomerService.GetAllActiveAsync();
+        clientList = all.ToList();
+    }
+
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            await LoadClients();
+            return;
+        }
+
+        var all = await CustomerService.GetAllActiveAsync();
+        
+        clientList = searchField switch
+        {
+            // Adicionamos o ?.Value e garantimos que não seja nulo antes do Contains
+            "Nome" => all.Where(c => c.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList(),
+            
+            "NIF" => all.Where(c => c.NIF?.Value != null && 
+                                   c.NIF.Value.Contains(searchText)).ToList(),
+            
+            "Email" => all.Where(c => c.Email?.Value != null && 
+                                     c.Email.Value.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList(),
+            _ => all.ToList()
+        };
+    }
+
+    private async Task Clear()
+    {
+        searchText = "";
+        await LoadClients();
+    }
+
+    private void CreateNew() => Navigation.NavigateTo("/cliente/guardar");
+
+    private void EditClient(Guid id) => Navigation.NavigateTo($"/cliente/guardar/{id}");
+
+    private async Task ConfirmDelete(Customer client)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Deseja eliminar o cliente '{client.Name}'?");
+        if (confirmed)
+        {
+            await CustomerService.DeleteAsync(client.Id);
+            await LoadClients();
+        }
+    }
+}

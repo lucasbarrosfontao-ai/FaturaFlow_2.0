@@ -1,0 +1,261 @@
+@page "/Faturas/Criar"
+@using System.Globalization
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+
+@inject InvoiceService InvoiceService
+@inject CustomerService CustomerService
+@inject ProductService ProductService
+@inject NavigationManager Navigation
+@inject UserSession UserSession
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Emitir Fatura - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-light-blue: #e3f2fd;
+    }
+
+    .ff-card { border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); }
+    .ff-header { background-color: var(--ff-dark-blue); color: white; padding: 1.5rem; border-bottom: 4px solid var(--ff-cyan); }
+    .ff-section-title { color: var(--ff-dark-blue); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; display: flex; align-items: center; }
+    .ff-section-title i { color: var(--ff-cyan); margin-right: 8px; font-size: 1.2rem; }
+    
+    .ff-input-group { border: 1px solid #dee2e6; border-radius: 8px; transition: border-color 0.2s; }
+    .ff-input-group:focus-within { border-color: var(--ff-blue); box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.1); }
+    
+    .ff-btn-add { background-color: var(--ff-cyan); color: white; border: none; font-weight: 600; transition: all 0.3s; }
+    .ff-btn-add:hover { background-color: #0097a7; color: white; transform: translateY(-1px); }
+    
+    .ff-table thead { background-color: #f8f9fa; border-bottom: 2px solid #edf2f7; }
+    .ff-table th { font-weight: 600; color: #4a5568; text-transform: uppercase; font-size: 0.75rem; padding: 12px; }
+    
+    .ff-totals-card { background-color: var(--ff-light-blue); border-radius: 10px; border: 1px solid #bbdefb; }
+    .ff-total-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+    .ff-grand-total { border-top: 2px solid #90caf9; padding-top: 0.8rem; margin-top: 0.8rem; color: var(--ff-dark-blue); }
+
+    .btn-primary { background-color: var(--ff-blue); border: none; }
+    .btn-primary:hover { background-color: var(--ff-dark-blue); }
+</style>
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning text-center shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-2"></i>
+            <h4 class="alert-heading">Acesso Negado</h4>
+            <p>Por favor, realize o login para acessar esta funcionalidade.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <div class="card ff-card">
+            <div class="ff-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold"><i class="bi bi- receipt-cutoff me-2"></i>EMISSÃO DE FATURA</h4>
+                <span class="badge bg-light text-dark">Rascunho</span>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- SEÇÃO 1: DADOS GERAIS -->
+                <div class="ff-section-title">
+                    <i class="bi bi-person-lines-fill"></i> Informações Gerais
+                </div>
+                <div class="row g-3 mb-5">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold text-muted small">Cliente</label>
+                        <select class="form-select ff-input-group p-2" @bind="selectedCustomerId">
+                            <option value="@Guid.Empty">-- Selecione o Cliente --</option>
+                            @foreach (var c in customers) { <option value="@c.Id">@c.Name</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-muted small">Número da Fatura</label>
+                        <input type="text" class="form-control ff-input-group p-2" @bind="invoiceNumber" placeholder="Ex: INV-001" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold text-muted small">Data de Emissão</label>
+                        <input type="date" class="form-control ff-input-group p-2" @bind="invoiceDate" />
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 2: ADICIONAR ITENS -->
+                <div class="ff-section-title">
+                    <i class="bi bi-box-seam"></i> Itens da Fatura
+                </div>
+                <div class="p-4 rounded-3 mb-4" style="background-color: #fcfcfc; border: 1px dashed #cbd5e0;">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-secondary">Produto</label>
+                            <select class="form-select ff-input-group" @onchange="OnProductSelected">
+                                <option value="@Guid.Empty">-- Selecione Produto --</option>
+                                @foreach (var p in products) { <option value="@p.Id">@p.Name (Estoque: @p.StockQuantity)</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-secondary">Quantidade</label>
+                            <input type="number" class="form-control ff-input-group" @bind="tempQty" min="1" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Preço Unitário</label>
+                            <div class="input-group ff-input-group">
+                                <span class="input-group-text bg-white border-0">€</span>
+                                <input type="number" class="form-control border-0 shadow-none" @bind="tempPrice" step="0.01" />
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn ff-btn-add w-100 py-2" @onclick="AddItemToList">
+                                <i class="bi bi-plus-circle-fill me-2"></i>ADICIONAR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LISTA DE ITENS -->
+                <div class="table-responsive mb-5">
+                    <table class="table table-hover ff-table align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Produto</th>
+                                <th class="text-center">Qtd</th>
+                                <th class="text-end">Preço</th>
+                                <th class="text-end">IVA</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!tempItems.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted small">Nenhum item adicionado à fatura.</td>
+                                </tr>
+                            }
+                            @foreach (var item in tempItems) {
+                                var p = products.First(x => x.Id == item.ProdId);
+                                <tr>
+                                    <td class="fw-bold text-dark">@p.Name</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border px-3 py-2">@item.Qty</span>
+                                    </td>
+                                    <td class="text-end">@item.Price.ToString("C2", new CultureInfo("pt-PT"))</td>
+                                    <td class="text-end"><span class="text-muted small">(@p.VatRate.Value%)</span></td>
+                                    <td class="text-end fw-bold">@((item.Qty * item.Price).ToString("C2", new CultureInfo("pt-PT")))</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm border-0" @onclick="() => tempItems.Remove(item)" title="Remover item">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- RODAPÉ: TOTAIS E AÇÕES -->
+                <div class="row g-4 border-top pt-4">
+                    <div class="col-lg-7">
+                        @if (!string.IsNullOrEmpty(msg)) { 
+                            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                                <div>@msg</div>
+                            </div> 
+                        }
+                        <div class="text-muted small">
+                            <i class="bi bi-info-circle me-1"></i> Certifique-se de que todos os dados do cliente e produtos estão corretos antes de guardar.
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="ff-totals-card p-4 shadow-sm">
+                            <div class="ff-total-row">
+                                <span class="text-secondary">Subtotal Líquido:</span>
+                                <span class="fw-semibold">@CalculateTotal().net.ToString("C2", new CultureInfo("pt-PT"))</span>
+                            </div>
+                            <div class="ff-total-row">
+                                <span class="text-secondary">Total IVA:</span>
+                                <span class="fw-semibold">@CalculateTotal().vat.ToString("C2", new CultureInfo("pt-PT"))</span>
+                            </div>
+                            <div class="ff-total-row ff-grand-total">
+                                <span class="h5 mb-0 fw-bold">TOTAL FINAL:</span>
+                                <span class="h4 mb-0 fw-bold">@CalculateTotal().total.ToString("C2", new CultureInfo("pt-PT"))</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-3 mt-4">
+                            <button class="btn btn-light border flex-grow-1 py-2 fw-semibold" @onclick='() => Navigation.NavigateTo("/Faturas/Ver")'>
+                                VOLTAR
+                            </button>
+                            <button class="btn btn-primary flex-grow-1 py-2 fw-bold shadow-sm" 
+                                    @onclick="HandleSave" 
+                                    disabled="@(!tempItems.Any() || selectedCustomerId == Guid.Empty)">
+                                <i class="bi bi-check2-all me-2"></i>FINALIZAR FATURA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private Guid selectedCustomerId = Guid.Empty;
+    private string invoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmm}";
+    private DateTime invoiceDate = DateTime.Now;
+
+    private List<Customer> customers = new();
+    private List<Product> products = new();
+    
+    private Guid tempProdId;
+    private int tempQty = 1;
+    private decimal tempPrice = 0;
+    private string msg = "";
+
+    private class LocalItem { public Guid ProdId { get; set; } public int Qty { get; set; } public decimal Price { get; set; } }
+    private List<LocalItem> tempItems = new();
+
+    protected override async Task OnInitializedAsync() {
+        if (!UserSession.IsLoggedIn) return;
+        customers = (await CustomerService.GetAllActiveAsync()).ToList();
+        products = (await ProductService.GetAllActiveAsync()).ToList();
+    }
+
+    private void OnProductSelected(ChangeEventArgs e) {
+        if (Guid.TryParse(e.Value?.ToString(), out Guid id) && id != Guid.Empty) {
+            tempProdId = id;
+            tempPrice = products.First(p => p.Id == id).SalePrice.Value;
+        }
+    }
+
+    private void AddItemToList() {
+        if (tempProdId == Guid.Empty || tempQty <= 0) return;
+        tempItems.Add(new LocalItem { ProdId = tempProdId, Qty = tempQty, Price = tempPrice });
+        tempProdId = Guid.Empty; tempQty = 1; tempPrice = 0;
+    }
+
+    private (decimal net, decimal vat, decimal total) CalculateTotal() {
+        decimal n = 0; decimal v = 0;
+        foreach (var i in tempItems) {
+            var p = products.First(x => x.Id == i.ProdId);
+            n += i.Qty * i.Price;
+            v += (i.Qty * i.Price) * (p.VatRate.Value / 100);
+        }
+        return (n, v, n + v);
+    }
+
+    private async Task HandleSave() {
+        try {
+            msg = "";
+            var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
+            await InvoiceService.CreateInvoiceAsync(selectedCustomerId, invoiceNumber, items);
+            await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso!");
+            Navigation.NavigateTo("/Faturas/Ver");
+        } catch (Exception ex) { msg = ex.Message; }
+    }
+}

@@ -1,0 +1,79 @@
+services:
+  db:
+    image: "mysql:8.0"
+    container_name: faturaflow_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: faturaflow_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./FaturaFlow.DB/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: faturaflow_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: FaturaFlow.Presentation/Dockerfile
+    container_name: faturaflow_app
+    volumes:
+      - dp_keys:/root/.aspnet/DataProtection-Keys
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=faturaflow_db;Uid=root;Pwd=${DB_PASSWORD};
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - ASPNETCORE_ENVIRONMENT=Development 
+    ports:
+      - "8080:8080"
+
+  worker:
+    build:
+      context: .
+      dockerfile: FaturaFlow.Worker/Dockerfile
+    container_name: faturaflow_worker
+    restart: always 
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=faturaflow_db;Uid=root;Pwd=${DB_PASSWORD};
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - Email__Host=${SMTP_HOST}
+      - Email__Port=${SMTP_PORT}
+      - Email__User=${SMTP_USER}
+      - Email__Pass=${SMTP_PASS}
+
+volumes:
+  db_data:
+  dp_keys:

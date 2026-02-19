@@ -1,0 +1,312 @@
+﻿@page "/"
+@using System.Globalization
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Application.DTOs
+@using FaturaFlow.Presentation.Services
+
+@inject DashboardService DashboardService
+@inject NavigationManager Navigation
+@inject UserSession UserSession 
+
+<PageTitle>Dashboard - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-bg-light: #f4f7f9;
+    }
+
+    .ff-dashboard-container { background-color: var(--ff-bg-light); min-height: 100vh; }
+    
+    /* Banner Principal */
+    .ff-welcome-banner {
+        background: linear-gradient(135deg, var(--ff-dark-blue) 0%, var(--ff-blue) 100%);
+        border-radius: 20px;
+        padding: 3rem;
+        position: relative;
+        overflow: hidden;
+        border: none;
+    }
+    .ff-welcome-banner::after {
+        content: "";
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+    }
+
+    /* Cards de Estatísticas */
+    .ff-stat-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.2s;
+        border-left: 5px solid transparent;
+    }
+    .ff-stat-card:hover { transform: translateY(-5px); }
+    .ff-stat-total { border-left-color: var(--ff-blue); }
+    .ff-stat-clients { border-left-color: var(--ff-cyan); }
+    .ff-stat-amount { border-left-color: #2ecc71; }
+    .ff-stat-stock { border-left-color: #e74c3c; }
+
+    /* Cards de Ação */
+    .ff-action-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s;
+        border: 1px solid #edf2f7;
+    }
+    .ff-action-card:hover {
+        background: var(--ff-dark-blue);
+        color: white !important;
+        transform: scale(1.02);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .ff-action-card:hover .ff-icon-box { background: var(--ff-cyan); color: var(--ff-dark-blue); }
+    .ff-icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: #eef2f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--ff-blue);
+        transition: all 0.3s;
+    }
+
+    /* Status System */
+    .ff-status-dot {
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .animate-up { animation: fadeInUp 0.5s ease-out; }
+        @@keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div class="card p-5 shadow-lg border-0 text-center" style="border-radius: 20px; max-width: 400px;">
+            <i class="bi bi-shield-lock-fill text-primary mb-3" style="font-size: 4rem;"></i>
+            <h3 class="fw-bold">Acesso Restrito</h3>
+            <p class="text-muted">Inicie sessão para gerir a sua faturação com o FaturaFlow.</p>
+            <button class="btn btn-primary btn-lg w-100 fw-bold mt-3" @onclick='() => Navigation.NavigateTo("/login")'>
+                EFETUAR LOGIN
+            </button>
+        </div>
+    </div>
+}
+else if (stats == null)
+{
+    <div class="d-flex flex-column justify-content-center align-items-center vh-100">
+        <div class="spinner-grow text-cyan" style="width: 3rem; height: 3rem;" role="status"></div>
+        <p class="mt-3 fw-bold text-muted">A preparar o seu painel...</p>
+    </div>
+}
+else 
+{
+    <div class="container-fluid ff-dashboard-container py-4">
+        <!-- CABEÇALHO BOAS-VINDAS -->
+        <div class="row mb-4 animate-up">
+            <div class="col-12">
+                <div class="ff-welcome-banner shadow-lg text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h1 class="display-5 fw-bold mb-1">Olá, @UserSession.UserName! 👋</h1>
+                            <p class="lead opacity-75">O seu negócio faturou <strong>@stats.TotalInvoicedAmount.ToString("C", new CultureInfo("pt-PT"))</strong> até agora.</p>
+                            <div class="mt-4">
+                                <button class="btn btn-cyan btn-lg fw-bold px-4 shadow-sm" style="background-color: var(--ff-cyan); border: none; color: var(--ff-dark-blue);" @onclick='() => Navigation.NavigateTo("/Faturas/Criar")'>
+                                    <i class="bi bi-plus-lg me-2"></i>Emitir Nova Fatura
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end d-none d-md-block">
+                            <i class="bi bi-graph-up-arrow opacity-25" style="font-size: 8rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARDS DE ESTATÍSTICAS -->
+        <div class="row g-3 mb-5 animate-up" style="animation-delay: 0.1s">
+            <div class="col-md-3">
+                <div class="card ff-stat-card ff-stat-total shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted fw-bold small text-uppercase">Total Faturas</span>
+                            <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                        </div>
+                        <h2 class="fw-bold mb-1">@stats.TotalInvoices</h2>
+                        <span class="badge bg-light text-primary border">Faturas Registadas</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card ff-stat-card ff-stat-clients shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted fw-bold small text-uppercase">Clientes</span>
+                            <i class="bi bi-people text-cyan fs-4"></i>
+                        </div>
+                        <h2 class="fw-bold mb-1">@stats.TotalCustomers</h2>
+                        <span class="badge bg-light text-info border">Base Ativa</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card ff-stat-card ff-stat-amount shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted fw-bold small text-uppercase">Volume Total</span>
+                            <i class="bi bi-currency-euro text-success fs-4"></i>
+                        </div>
+                        <h2 class="fw-bold mb-1 text-primary">@stats.TotalInvoicedAmount.ToString("N2", new CultureInfo("pt-PT"))€</h2>
+                        <span class="badge bg-light text-success border">Valor Acumulado</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card ff-stat-card ff-stat-stock shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted fw-bold small text-uppercase">Stock Crítico</span>
+                            <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+                        </div>
+                        <h2 class="fw-bold mb-1 text-danger">@stats.LowStockProducts</h2>
+                        <span class="badge bg-danger-subtle text-danger border">Atenção Necessária</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 animate-up" style="animation-delay: 0.2s">
+            <!-- AÇÕES RÁPIDAS -->
+            <div class="col-lg-8">
+                <h5 class="fw-bold mb-3 d-flex align-items-center">
+                    <i class="bi bi-grid-fill me-2 text-primary"></i> Gestão do Sistema
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="/Clientes/Ver" class="ff-action-card shadow-sm">
+                            <div class="ff-icon-box"><i class="bi bi-person-badge"></i></div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Clientes</h6>
+                                <small class="opacity-75">Gerir contactos e dados fiscais</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/Produtos/Ver" class="ff-action-card shadow-sm">
+                            <div class="ff-icon-box"><i class="bi bi-box-seam"></i></div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Inventário</h6>
+                                <small class="opacity-75">Produtos e controlo de stock</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/Fornecedores/Ver" class="ff-action-card shadow-sm">
+                            <div class="ff-icon-box"><i class="bi bi-truck"></i></div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Fornecedores</h6>
+                                <small class="opacity-75">Gestão de compras e parceiros</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/Faturas/Ver" class="ff-action-card shadow-sm">
+                            <div class="ff-icon-box"><i class="bi bi-receipt"></i></div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Histórico</h6>
+                                <small class="opacity-75">Consultar faturas e estados</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATUS DA INFRAESTRUTURA -->
+            <div class="col-lg-4">
+                <h5 class="fw-bold mb-3 d-flex align-items-center">
+                    <i class="bi bi-cpu-fill me-2 text-primary"></i> Infraestrutura
+                </h5>
+                <div class="card border-0 shadow-sm p-2" style="border-radius: 15px;">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-hdd-network me-3 text-muted fs-5"></i>
+                                <span>Servidores Docker</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success px-3">
+                                <span class="ff-status-dot bg-success"></span> 4 Ativos
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-connector-v me-3 text-muted fs-5"></i>
+                                <span>Mensagearia RabbitMQ</span>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary px-3">
+                                <span class="ff-status-dot bg-primary"></span> Online
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-database me-3 text-muted fs-5"></i>
+                                <span>Base de Dados</span>
+                            </div>
+                            <span class="text-muted small fw-bold">MySQL 8.0</span>
+                        </li>
+                    </ul>
+                    <div class="card-footer bg-white border-top-0 text-center pb-3">
+                        <small class="text-muted fw-italic">FaturaFlow v1.0.4 - Sistema Operacional</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private DashboardStatsDto? stats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try 
+        {
+            // Chamada única ao serviço de aplicação
+            stats = await DashboardService.GetStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            // Opcional: Logar erro ou mostrar mensagem
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

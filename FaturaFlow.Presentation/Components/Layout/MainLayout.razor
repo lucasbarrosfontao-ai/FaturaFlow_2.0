@@ -1,0 +1,42 @@
+﻿@inherits LayoutComponentBase
+@using FaturaFlow.Presentation.Services
+@inject UserSession session
+
+<div class="page">
+    <div class="sidebar shadow">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 shadow-sm">
+            <div class="d-flex align-items-center">
+                @if (session.IsLoggedIn)
+                {
+                    <div class="user-pill">
+                        <i class="bi bi-person-circle me-2 text-primary"></i>
+                        <span class="fw-semibold text-dark">@session.UserName</span>
+                        <span class="badge bg-success-subtle text-success ms-2">Online</span>
+                    </div>
+                }
+            </div>
+            <div class="d-none d-md-flex align-items-center ms-auto">
+                <span class="text-muted small me-3">FaturaFlow v2.0</span>
+                <i class="bi bi-bell text-muted me-3" style="cursor: pointer;"></i>
+            </div>
+        </div>
+
+        <article class="content px-4 py-3">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui" class="shadow-lg">
+    <div class="d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-exclamation-triangle-fill me-2"></i> Ocorreu um erro inesperado.</span>
+        <div>
+            <a href="" class="reload btn btn-sm btn-light me-2 text-dark">Recarregar</a>
+            <a class="dismiss btn btn-sm btn-outline-light border-0">🗙</a>
+        </div>
+    </div>
+</div>

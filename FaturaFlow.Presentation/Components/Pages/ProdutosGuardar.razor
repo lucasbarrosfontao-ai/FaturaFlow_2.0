@@ -1,0 +1,174 @@
+@page "/produto/guardar/{Id:guid?}"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+@using Microsoft.AspNetCore.Components
+@inject ProductService ProductService
+@inject SupplierService SupplierService
+@inject NavigationManager Navigation
+@inject UserSession UserSession 
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(Id.HasValue ? "Editar" : "Novo") Produto - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-form-card { border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; max-width: 1000px; margin: auto; }
+    .ff-form-header { background: var(--ff-dark-blue); color: white; padding: 1.5rem 2rem; border-bottom: 4px solid var(--ff-cyan); }
+    
+    .ff-section-title { font-size: 0.85rem; font-weight: 700; color: var(--ff-blue); text-transform: uppercase; letter-spacing: 1px; margin-top: 2rem; margin-bottom: 1rem; display: flex; align-items: center; }
+    .ff-section-title::after { content: ""; flex: 1; height: 1px; background: #eee; margin-left: 15px; }
+
+    .ff-price-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+    .input-group-text { background: white; border-right: none; color: var(--ff-blue); font-weight: bold; }
+    .ff-form-control:focus { border-color: var(--ff-cyan); box-shadow: 0 0 0 0.25rem rgba(0, 188, 212, 0.1); }
+</style>
+
+<div class="container py-5">
+    <div class="card ff-form-card">
+        <div class="ff-form-header d-flex align-items-center">
+            <i class="bi bi-box-seam fs-2 me-3 text-cyan" style="color: var(--ff-cyan);"></i>
+            <div>
+                <h4 class="mb-0 fw-bold">@(Id.HasValue ? "Editar Produto" : "Novo Registo de Inventário")</h4>
+                <small class="opacity-75">Configure os detalhes técnicos e financeiros do item.</small>
+            </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <EditForm Model="@model" OnValidSubmit="HandleSave">
+                <DataAnnotationsValidator />
+
+                <!-- SECÇÃO 1: BÁSICO -->
+                <div class="ff-section-title">Informações Gerais</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Fornecedor Associado</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-truck"></i></span>
+                            <InputSelect @bind-Value="model.SupplierId" class="form-select ff-form-control">
+                                <option value="@Guid.Empty">-- Selecione um Fornecedor --</option>
+                                @foreach (var f in suppliers) { <option value="@f.Id">@f.CompanyName</option> }
+                            </InputSelect>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Nome do Produto</label>
+                        <InputText @bind-Value="model.Name" class="form-control ff-form-control" placeholder="Ex: Monitor UltraWide 34'" />
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Referência / SKU</label>
+                        <InputText @bind-Value="model.Reference" class="form-control ff-form-control" placeholder="REF-000" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Unidade de Medida</label>
+                        <InputText @bind-Value="model.UnitOfMeasure" class="form-control ff-form-control" placeholder="un, kg, lt..." />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Stock Inicial</label>
+                        <InputNumber @bind-Value="model.StockQuantity" class="form-control ff-form-control" />
+                    </div>
+                </div>
+
+                <!-- SECÇÃO 2: FINANCEIRO -->
+                <div class="ff-section-title">Valores e Tributação</div>
+                <div class="ff-price-box">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-muted small">Preço de Custo</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <InputNumber @bind-Value="model.PurchasePrice" class="form-control border-start-0" step="0.01" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-primary small">Preço de Venda</label>
+                            <div class="input-group">
+                                <span class="input-group-text border-primary text-primary">€</span>
+                                <InputNumber @bind-Value="model.SalePrice" class="form-control border-primary border-start-0" step="0.01" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-muted small">Taxa IVA (%)</label>
+                            <div class="input-group">
+                                <InputNumber @bind-Value="model.VatRate" class="form-control border-end-0" />
+                                <span class="input-group-text border-start-0">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 d-flex gap-3">
+                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm" style="background-color: var(--ff-dark-blue); border: none;">
+                        <i class="bi bi-save2 me-2"></i>GUARDAR PRODUTO
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" @onclick='() => Navigation.NavigateTo("/Produtos/Ver")'>
+                        CANCELAR
+                    </button>
+                </div>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(errorMessage)) { 
+                <div class="alert alert-danger mt-4 border-0 shadow-sm">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i> @errorMessage
+                </div> 
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    private ProductFormModel model = new();
+    private List<Supplier> suppliers = new();
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync() {
+        if (!UserSession.IsLoggedIn) return;
+        suppliers = (await SupplierService.GetAllActiveAsync()).ToList();
+        if (Id.HasValue) {
+            var p = await ProductService.GetByIdAsync(Id.Value);
+            if (p != null) model = new() { 
+                Name = p.Name, Reference = p.Reference, SupplierId = p.SupplierId,
+                UnitOfMeasure = p.UnitOfMeasure ?? "", StockQuantity = p.StockQuantity,
+                PurchasePrice = p.PurchasePrice.Value,
+                SalePrice = p.SalePrice.Value,
+                VatRate = p.VatRate.Value
+            };
+        }
+    }
+
+    private async Task HandleSave() {
+        try {
+            if (model.SalePrice < model.PurchasePrice) {
+                bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "O preço de compra é maior que o preço de venda, deseja confirmar?");
+                if (!confirmed) return;    
+            }
+            if (model.StockQuantity < 0) {
+                bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "O Stock é negativo, deseja confirmar?");
+                if (!confirmed) return; 
+            }
+            await ProductService.SaveProductAsync(Id, model.SupplierId, model.Name, model.Reference, 
+                model.PurchasePrice, model.SalePrice, model.VatRate, model.StockQuantity, model.UnitOfMeasure);
+            Navigation.NavigateTo("/Produtos/Ver");
+        } catch (Exception ex) { errorMessage = ex.Message; }
+    }
+
+    public class ProductFormModel {
+        public Guid SupplierId { get; set; }
+        public string Name { get; set; } = "";
+        public string Reference { get; set; } = "";
+        public string UnitOfMeasure { get; set; } = "un";
+        public decimal PurchasePrice { get; set; }
+        public decimal SalePrice { get; set; }
+        public decimal VatRate { get; set; } = 23;
+        public int StockQuantity { get; set; }
+    }
+}

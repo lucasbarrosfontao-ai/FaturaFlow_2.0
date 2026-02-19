@@ -1,0 +1,149 @@
+@page "/Fornecedores/Ver"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+
+@inject SupplierService SupplierService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject UserSession UserSession 
+
+<PageTitle>Fornecedores - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-page-header { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border-left: 5px solid var(--ff-cyan); }
+    .ff-search-card { background: white; border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; border: 1px solid #edf2f7; }
+    .ff-table-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; border: none; }
+    .ff-thead { background-color: var(--ff-dark-blue); color: white; }
+    .ff-thead th { font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 15px; border: none; }
+    .ff-td { padding: 12px 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .ff-badge-nipc { font-family: 'Monaco', monospace; background: #ecfeff; color: #0891b2; padding: 4px 8px; border-radius: 4px; border: 1px solid #cffafe; }
+</style>
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="container mt-5 text-center">
+        <div class="card p-5 shadow-sm border-0">
+            <h3 class="text-danger fw-bold">Acesso Negado</h3>
+            <p>Por favor, faça login para continuar.</p>
+            <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/login")'>Login</button>
+        </div>
+    </div>
+}
+else 
+{
+    <div class="container-fluid py-3">
+        <!-- HEADER -->
+        <div class="ff-page-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-truck me-2 text-info"></i>Gestão de Fornecedores</h3>
+                <p class="text-muted mb-0 small">Controlo de compras e parceiros logísticos.</p>
+            </div>
+            <button class="btn btn-info text-white shadow-sm fw-bold px-4" @onclick='() => Navigation.NavigateTo("/fornecedor/guardar")'>
+                <i class="bi bi-plus-lg me-2"></i>NOVO FORNECEDOR
+            </button>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="ff-search-card shadow-sm">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+  <input type="text" class="form-control border-start-0" placeholder="Pesquisar por nome da empresa..." @bind="searchText" @bind:event="oninput" @onkeyup='async (e) => { if(e.Key == "Enter") await Search(); }' />
+                        <button class="btn btn-dark px-4" @onclick="Search">Filtrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LISTA -->
+        <div class="ff-table-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="ff-thead">
+                        <tr>
+                            <th>Empresa / NIPC</th>
+                            <th>Representante</th>
+                            <th>Contactos</th>
+                            <th>Localidade</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (supplierList == null)
+                        {
+                            <tr><td colspan="5" class="text-center p-5"><div class="spinner-border text-info"></div></td></tr>
+                        }
+                        else if (!supplierList.Any())
+                        {
+                            <tr><td colspan="5" class="text-center p-5 text-muted">Nenhum fornecedor registado.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var s in supplierList)
+                            {
+                                <tr>
+                                    <td class="ff-td">
+                                        <div class="fw-bold text-dark">@s.CompanyName</div>
+                                        <span class="ff-badge-nipc small">@(s.NIPC?.Value ?? "S/NIPC")</span>
+                                    </td>
+                                    <td class="ff-td">
+                                        <div class="small fw-bold">@s.RepresentativeName</div>
+                                    </td>
+                                    <td class="ff-td">
+                                        <div class="small"><i class="bi bi-telephone me-1 opacity-50"></i>@(s.Phone?.Value ?? "---")</div>
+                                        <div class="small"><i class="bi bi-envelope me-1 opacity-50"></i>@(s.Email?.Value ?? "---")</div>
+                                    </td>
+                                    <td class="ff-td">
+                                        <span class="badge bg-light text-secondary border fw-normal">@s.City</span>
+                                    </td>
+                                    <td class="ff-td text-center">
+                                        <button class="btn btn-light border btn-sm me-1" title="Editar" @onclick='() => Navigation.NavigateTo($"/fornecedor/guardar/{s.Id}")'>
+                                            <i class="bi bi-pencil-fill text-primary"></i>
+                                        </button>
+                                        <button class="btn btn-light border btn-sm" title="Eliminar" @onclick="() => ConfirmDelete(s)">
+                                            <i class="bi bi-trash3-fill text-danger"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    private List<Supplier>? supplierList;
+    private string searchText = "";
+
+    protected override async Task OnInitializedAsync() {
+        if (UserSession.IsLoggedIn) await LoadSuppliers();
+    }
+
+    private async Task LoadSuppliers() {
+        var all = await SupplierService.GetAllActiveAsync();
+        supplierList = all.OrderBy(s => s.CompanyName).ToList();
+    }
+
+    private async Task Search() {
+        if (string.IsNullOrWhiteSpace(searchText)) { await LoadSuppliers(); return; }
+        var all = await SupplierService.GetAllActiveAsync();
+        supplierList = all.Where(s => s.CompanyName.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private async Task ConfirmDelete(Supplier s) {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Deseja desativar o fornecedor {s.CompanyName}?");
+        if (confirm) {
+            await SupplierService.DeactivateAsync(s.Id);
+            await LoadSuppliers();
+        }
+    }
+}

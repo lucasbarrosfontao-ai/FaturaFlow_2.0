@@ -1,0 +1,284 @@
+﻿@page "/login"
+@layout LayoutVazio
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Presentation.Services
+
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject UserSession session
+@rendermode InteractiveServer
+<PageTitle>Login - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-light-blue: #eef2f7;
+    }
+
+    .ff-login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top left, var(--ff-blue), var(--ff-dark-blue));
+        padding: 20px;
+    }
+
+    .ff-login-card {
+        width: 100%;
+        max-width: 420px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: ff-fadeIn 0.6s ease-out;
+    }
+
+    .ff-login-header {
+        background-color: white;
+        padding: 40px 30px 20px;
+        text-align: center;
+    }
+
+    .ff-brand-icon {
+        width: 70px;
+        height: 70px;
+        background: var(--ff-light-blue);
+        color: var(--ff-blue);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 2.5rem;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .ff-input-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .ff-input-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--ff-blue);
+        opacity: 0.6;
+    }
+
+    .ff-input-group .form-control {
+        padding-left: 45px;
+        height: 50px;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+
+    .ff-input-group .form-control:focus {
+        border-color: var(--ff-cyan);
+        box-shadow: 0 0 0 4px rgba(0, 188, 212, 0.1);
+    }
+
+    .ff-btn-login {
+        background-color: var(--ff-blue);
+        border: none;
+        height: 50px;
+        border-radius: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+    }
+
+    .ff-btn-login:hover {
+        background-color: var(--ff-dark-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 45, 91, 0.3);
+    }
+
+    .ff-btn-recovery {
+        background-color: var(--ff-cyan);
+        color: white;
+        border: none;
+        height: 50px;
+        border-radius: 10px;
+        font-weight: 700;
+        transition: all 0.3s;
+    }
+
+    .ff-btn-recovery:hover {
+        background-color: #00a4b8;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .ff-error-box {
+        background-color: #fff5f5;
+        border-left: 4px solid #f56565;
+        color: #c53030;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    @@keyframes ff-fadeIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="ff-login-container">
+    <div class="ff-login-card">
+        
+        @if (!exibirRecuperacao)
+        {
+            <!-- FORMULÁRIO DE LOGIN -->
+            <div class="ff-login-header">
+                <div class="ff-brand-icon">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-1">FaturaFlow</h3>
+                <p class="text-muted small">Software de Gestão e Faturação</p>
+            </div>
+
+            <div class="px-4 pb-5">
+                @if (!string.IsNullOrEmpty(mensagemErro))
+                {
+                    <div class="ff-error-box animate__animated animate__headShake">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>@mensagemErro</span>
+                    </div>
+                }
+
+                <div class="ff-input-group">
+                    <i class="bi bi-person-fill"></i>
+                    <input type="text" class="form-control" @bind="usuarioInput" placeholder="Utilizador" autocomplete="username" />
+                </div>
+
+                <div class="ff-input-group">
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password" class="form-control" @bind="senhaInput" placeholder="Palavra-passe" autocomplete="current-password" />
+                </div>
+
+                <button class="btn ff-btn-login w-100 text-white mb-3" @onclick="FazerLogin">
+                    ENTRAR NO SISTEMA
+                </button>
+
+                <div class="text-center">
+                    <button class="btn btn-link btn-sm text-decoration-none text-muted fw-bold" @onclick="() => exibirRecuperacao = true">
+                        Esqueceu-se dos dados de acesso?
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- FORMULÁRIO DE RECUPERAÇÃO -->
+            <div class="ff-login-header">
+                <div class="ff-brand-icon" style="color: var(--ff-cyan);">
+                    <i class="bi bi-shield-key-fill"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-1">Recuperar Conta</h3>
+                <p class="text-muted small">Introduza o seu e-mail para receber um código</p>
+            </div>
+
+            <div class="px-4 pb-5">
+                @if (!string.IsNullOrEmpty(mensagemErro))
+                {
+                    <div class="ff-error-box">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>@mensagemErro</span>
+                    </div>
+                }
+
+                <div class="ff-input-group">
+                    <i class="bi bi-envelope-at-fill" style="color: var(--ff-cyan);"></i>
+                    <input type="email" class="form-control" @bind="emailRecuperacaoInput" placeholder="seu-email@exemplo.com" />
+                </div>
+
+                <button class="btn ff-btn-recovery w-100 mb-3 shadow-sm" @onclick="SolicitarRecuperacao">
+                    <i class="bi bi-send-fill me-2"></i>ENVIAR CÓDIGO
+                </button>
+
+                <div class="text-center">
+                    <button class="btn btn-link btn-sm text-decoration-none text-muted" @onclick="() => exibirRecuperacao = false">
+                        <i class="bi bi-arrow-left me-1"></i> Voltar para o login
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+@code {
+    private string usuarioInput = "";
+    private string senhaInput = "";
+    private bool exibirRecuperacao = false;
+    private string emailRecuperacaoInput = "";
+    private string mensagemErro = "";
+
+   private async Task FazerLogin()
+    {
+        mensagemErro = "";
+        try
+        {
+            if (string.IsNullOrWhiteSpace(usuarioInput) || string.IsNullOrWhiteSpace(senhaInput))
+            {
+                mensagemErro = "Preencha todos os campos.";
+                return;
+            }
+
+            var user = await AuthService.LoginAsync(usuarioInput, senhaInput);
+
+            if (user != null)
+            {
+                session.IsLoggedIn = true;
+                session.UserName = user.Username;
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                // Se chegou aqui, 'user' é NULL. 
+                // Não tente acessar user.Email ou user.Password aqui!
+                mensagemErro = "Utilizador ou palavra-passe incorretos.";
+                Console.WriteLine("Falha no login: utilizador não encontrado ou senha errada.");
+            }
+        }
+        catch (Exception ex)
+        {
+            mensagemErro = "Erro técnico: " + ex.Message;
+        }
+    }
+
+    private async Task SolicitarRecuperacao()
+    {
+        mensagemErro = "";
+
+        if (string.IsNullOrWhiteSpace(emailRecuperacaoInput))
+        {
+            mensagemErro = "Introduza o seu e-mail.";
+            return;
+        }
+
+        try
+        {
+            // Camada de Application gera o código, salva no banco e envia para o RabbitMQ
+            await AuthService.RequestPasswordResetAsync(emailRecuperacaoInput);
+
+            await JSRuntime.InvokeVoidAsync("alert", "O código foi enviado para o seu e-mail!");
+            Navigation.NavigateTo($"/Utilizadores/Recuperar/{emailRecuperacaoInput}");
+        }
+        catch (Exception ex)
+        {
+            mensagemErro = ex.Message;
+        }
+    }
+}

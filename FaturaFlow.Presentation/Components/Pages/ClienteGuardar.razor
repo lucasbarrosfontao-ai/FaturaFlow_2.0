@@ -1,0 +1,158 @@
+@page "/cliente/guardar/{Id:guid?}"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Presentation.Services
+@inject CustomerService CustomerService
+@inject NavigationManager Navigation
+@inject UserSession UserSession 
+
+<PageTitle>@(Id.HasValue ? "Editar" : "Novo") Cliente - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-form-card { border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; max-width: 900px; margin: auto; }
+    .ff-form-header { background: var(--ff-blue); color: white; padding: 1.5rem 2rem; border-bottom: 4px solid var(--ff-cyan); }
+    .ff-input-group { position: relative; }
+    .ff-input-group i { position: absolute; left: 12px; top: 38px; color: var(--ff-blue); opacity: 0.5; }
+    .ff-form-control { padding-left: 38px !important; border-radius: 8px; border: 1px solid #dee2e6; transition: all 0.3s; }
+    .ff-form-control:focus { border-color: var(--ff-cyan); box-shadow: 0 0 0 0.25rem rgba(0, 188, 212, 0.1); }
+    .ff-section-title { font-size: 0.85rem; font-weight: 700; color: var(--ff-blue); text-transform: uppercase; letter-spacing: 1px; margin-top: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; }
+    .ff-section-title::after { content: ""; flex: 1; height: 1px; background: #eee; margin-left: 15px; }
+</style>
+
+<div class="container py-5">
+    <div class="card ff-form-card">
+        <div class="ff-form-header d-flex align-items-center">
+            <i class="bi bi-person-vcard fs-2 me-3"></i>
+            <div>
+                <h4 class="mb-0 fw-bold">@(Id.HasValue ? "Editar Dados do Cliente" : "Novo Registo de Cliente")</h4>
+                <small class="opacity-75">Mantenha os dados dos seus clientes sempre atualizados.</small>
+            </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            @if (!UserSession.IsLoggedIn) {
+                <div class="alert alert-warning border-0 shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i>Acesso restrito. Efetue login.</div>
+            }
+            else if (isLoading) {
+                <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+            }
+            else {
+                <EditForm Model="@model" OnValidSubmit="HandleSave">
+                    <DataAnnotationsValidator />
+
+                    <div class="ff-section-title">Dados Pessoais / Fiscais</div>
+                    <div class="row g-3">
+                        <div class="col-md-8 ff-input-group">
+                            <label class="form-label fw-semibold small">Nome Completo</label>
+                            <i class="bi bi-person"></i>
+                            <InputText @bind-Value="model.Name" class="form-control ff-form-control" placeholder="Ex: João Silva" />
+                            <ValidationMessage For="@(() => model.Name)" class="small text-danger" />
+                        </div>
+                        <div class="col-md-4 ff-input-group">
+                            <label class="form-label fw-semibold small">NIF</label>
+                            <i class="bi bi-fingerprint"></i>
+                            <InputText @bind-Value="model.NIF" class="form-control ff-form-control" placeholder="9 dígitos" />
+                        </div>
+                    </div>
+
+                    <div class="ff-section-title">Contactos</div>
+                    <div class="row g-3">
+                        <div class="col-md-6 ff-input-group">
+                            <label class="form-label fw-semibold small">E-mail</label>
+                            <i class="bi bi-envelope"></i>
+                            <InputText @bind-Value="model.Email" class="form-control ff-form-control" placeholder="email@exemplo.pt" />
+                        </div>
+                        <div class="col-md-6 ff-input-group">
+                            <label class="form-label fw-semibold small">Telemóvel / Contacto</label>
+                            <i class="bi bi-phone"></i>
+                            <InputText @bind-Value="model.Phone" class="form-control ff-form-control" placeholder="912 345 678" />
+                        </div>
+                    </div>
+
+                    <div class="ff-section-title">Endereço de Faturação</div>
+                    <div class="row g-3">
+                        <div class="col-12 ff-input-group">
+                            <label class="form-label fw-semibold small">Morada</label>
+                            <i class="bi bi-house-door"></i>
+                            <InputText @bind-Value="model.Address" class="form-control ff-form-control" />
+                        </div>
+                        <div class="col-md-8 ff-input-group">
+                            <label class="form-label fw-semibold small">Cidade</label>
+                            <i class="bi bi-building"></i>
+                            <InputText @bind-Value="model.City" class="form-control ff-form-control" />
+                        </div>
+                        <div class="col-md-4 ff-input-group">
+                            <label class="form-label fw-semibold small">Código Postal</label>
+                            <i class="bi bi-mailbox"></i>
+                            <InputText @bind-Value="model.ZipCode" class="form-control ff-form-control" placeholder="0000-000" />
+                        </div>
+                    </div>
+
+                    <div class="mt-5 d-flex gap-3">
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-save2-fill me-2"></i>GUARDAR CLIENTE
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary px-4 py-2" @onclick="Cancel">
+                            VOLTAR
+                        </button>
+                    </div>
+                </EditForm>
+
+                @if (!string.IsNullOrEmpty(errorMessage)) {
+                    <div class="alert alert-danger mt-4 border-0 shadow-sm">@errorMessage</div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    private CustomerFormModel model = new();
+    private bool isLoading = true;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync() {
+        if (!UserSession.IsLoggedIn) { Navigation.NavigateTo("/login"); return; }
+        if (Id.HasValue && Id != Guid.Empty) {
+            var c = await CustomerService.GetByIdAsync(Id.Value);
+            if (c != null) {
+                model = new CustomerFormModel {
+                    Name = c.Name,
+                    NIF = c.NIF.Value,
+                    Phone = c.Phone?.Value ?? "",
+                    Email = c.Email?.Value ?? "",
+                    Address = c.Address ?? "",
+                    City = c.City ?? "",
+                    ZipCode = c.ZipCode?.Value ?? ""
+                };
+            }
+        }
+        isLoading = false;
+    }
+
+    private async Task HandleSave() {
+        try {
+            errorMessage = "";
+            await CustomerService.SaveCustomerAsync(Id, model.Name, model.NIF, model.Phone, model.Email, model.Address, model.City, model.ZipCode);
+            Navigation.NavigateTo("/clientes/ver");
+        } catch (Exception ex) { errorMessage = ex.Message; }
+    }
+
+    private void Cancel() => Navigation.NavigateTo("/clientes/ver");
+
+    public class CustomerFormModel {
+        public string Name { get; set; } = "";
+        public string NIF { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string City { get; set; } = "";
+        public string ZipCode { get; set; } = "";
+    }
+}

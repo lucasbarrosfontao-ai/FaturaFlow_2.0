@@ -1,0 +1,100 @@
+:root {
+    --ff-dark-blue: #002d5b;
+    --ff-blue: #0056b3;
+    --ff-cyan: #00bcd4;
+    --ff-content-bg: #f8fafc;
+}
+
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    background-color: var(--ff-content-bg);
+    min-height: 100vh;
+}
+
+.sidebar {
+    background-color: var(--ff-dark-blue);
+    z-index: 10;
+}
+
+/* Barra Superior */
+.top-row {
+    background-color: white;
+    border-bottom: 1px solid #edf2f7;
+    justify-content: flex-end;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.user-pill {
+    background: #f1f5f9;
+    padding: 6px 16px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+}
+
+/* Responsividade e Layout */
+@media (max-width: 640.98px) {
+    .top-row {
+        justify-content: space-between;
+    }
+}
+
+@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 280px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .top-row, article {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+
+    .content {
+        padding-top: 1.5rem !important;
+    }
+}
+
+/* Interface de Erro */
+#blazor-error-ui {
+    background: #e53e3e;
+    color: white;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    position: fixed;
+    width: auto;
+    z-index: 2000;
+    border-radius: 12px;
+    display: none;
+    font-weight: 500;
+}
+
+#blazor-error-ui .reload {
+    text-decoration: none;
+    font-weight: bold;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+}

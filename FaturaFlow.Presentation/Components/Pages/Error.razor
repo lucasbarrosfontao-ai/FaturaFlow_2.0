@@ -1,0 +1,163 @@
+﻿@page "/Error"
+@using System.Diagnostics
+@inject NavigationManager Navigation
+
+<PageTitle>Erro - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-light-blue: #eef2f7;
+    }
+
+    .ff-error-container {
+        min-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        padding: 20px;
+    }
+
+    .ff-error-card {
+        max-width: 600px;
+        width: 100%;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: none;
+        overflow: hidden;
+        text-align: center;
+        animation: ff-error-bounce 0.5s ease-out;
+    }
+
+    .ff-error-header {
+        background: linear-gradient(135deg, var(--ff-dark-blue), var(--ff-blue));
+        padding: 40px;
+        color: white;
+    }
+
+    .ff-error-icon {
+        font-size: 5rem;
+        color: var(--ff-cyan);
+        margin-bottom: 15px;
+    }
+
+    .ff-error-body {
+        padding: 40px;
+    }
+
+    .ff-request-id {
+        background-color: var(--ff-light-blue);
+        color: var(--ff-blue);
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9rem;
+        display: inline-block;
+        margin-top: 10px;
+        border: 1px dashed var(--ff-blue);
+    }
+
+    .ff-dev-note {
+        font-size: 0.8rem;
+        color: #6c757d;
+        border-top: 1px solid #eee;
+        padding-top: 20px;
+        margin-top: 30px;
+        text-align: left;
+    }
+
+    .ff-btn-home {
+        background-color: var(--ff-blue);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .ff-btn-home:hover {
+        background-color: var(--ff-dark-blue);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .ff-btn-outline {
+        border: 2px solid var(--ff-cyan);
+        color: var(--ff-blue);
+        background: transparent;
+        padding: 10px 25px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .ff-btn-outline:hover {
+        background-color: var(--ff-cyan);
+        color: white;
+    }
+
+    @@keyframes ff-error-bounce {
+        0% { transform: scale(0.9); opacity: 0; }
+        70% { transform: scale(1.05); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+<div class="ff-error-container">
+    <div class="ff-error-card">
+        <div class="ff-error-header">
+            <i class="bi bi-exclamation-octagon-fill ff-error-icon"></i>
+            <h1 class="fw-bold mb-0">Ops! Algo correu mal.</h1>
+        </div>
+        
+        <div class="ff-error-body">
+            <h4 class="text-dark mb-3">Pedimos desculpa, mas não conseguimos processar o seu pedido.</h4>
+            <p class="text-muted mb-4">
+                Ocorreu um erro inesperado no sistema. A nossa equipa técnica será notificada para resolver o problema o mais breve possível.
+            </p>
+
+            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                <a href="/" class="ff-btn-home">
+                    <i class="bi bi-house-door me-2"></i>VOLTAR AO INÍCIO
+                </a>
+                <button class="ff-btn-outline" onclick="window.location.reload()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>TENTAR NOVAMENTE
+                </button>
+            </div>
+
+            @if (ShowRequestId)
+            {
+                <div class="mb-2">
+                    <span class="small fw-bold text-uppercase text-muted">ID da Requisição</span><br />
+                    <code class="ff-request-id">@RequestId</code>
+                </div>
+            }
+
+            <div class="ff-dev-note">
+                <p class="mb-1 fw-bold text-dark"><i class="bi bi-code-slash me-1"></i> Informação de Desenvolvimento:</p>
+                <p class="mb-0">
+                    O modo de desenvolvimento pode fornecer detalhes mais específicos sobre o erro. 
+                    <strong>Não deve ser ativado em ambiente de produção</strong> pois pode expor dados sensíveis.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

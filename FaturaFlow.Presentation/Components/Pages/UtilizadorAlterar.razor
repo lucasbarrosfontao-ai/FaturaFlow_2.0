@@ -1,0 +1,122 @@
+@page "/Utilizadores/Editar/{Id:guid}"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Presentation.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject UserSession UserSession
+
+<PageTitle>Editar Perfil - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+    }
+
+    .ff-edit-card { border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; max-width: 550px; margin: auto; }
+    .ff-edit-header { background: var(--ff-dark-blue); color: white; padding: 1.5rem 2rem; border-bottom: 4px solid var(--ff-cyan); }
+    .ff-auth-section { background-color: #fff9db; border: 1px solid #ffec99; border-radius: 12px; padding: 20px; margin-bottom: 2rem; }
+    
+    .ff-input-group { position: relative; margin-bottom: 1.25rem; }
+    .ff-input-group i { position: absolute; left: 12px; top: 38px; color: var(--ff-blue); opacity: 0.5; }
+    .ff-form-control { padding-left: 40px !important; border-radius: 8px; }
+    
+    .ff-label-small { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 5px; }
+</style>
+
+<div class="container py-5">
+    <div class="card ff-edit-card">
+        <div class="ff-edit-header d-flex align-items-center">
+            <i class="bi bi-person-gear fs-2 me-3"></i>
+            <div>
+                <h4 class="mb-0 fw-bold">Gestão de Perfil</h4>
+                <small class="opacity-75">Atualize os dados de acesso do utilizador.</small>
+            </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <!-- VALIDAÇÃO DE SEGURANÇA -->
+            <div class="ff-auth-section">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-shield-check text-warning fs-4 me-2"></i>
+                    <span class="fw-bold text-dark small">Confirmação de Segurança</span>
+                </div>
+                <div class="ff-input-group mb-0">
+                    <label class="ff-label-small">Senha Atual do Administrador</label>
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password" class="form-control ff-form-control border-warning shadow-sm" @bind="oldPass" placeholder="Introduza a sua senha para autorizar" />
+                </div>
+            </div>
+
+            <!-- DADOS DO UTILIZADOR -->
+            <div class="ff-input-group">
+                <label class="ff-label-small">Novo Nome de Utilizador</label>
+                <i class="bi bi-person-badge"></i>
+                <input type="text" class="form-control ff-form-control" @bind="newUsername" />
+            </div>
+
+            <div class="ff-input-group">
+                <label class="ff-label-small">E-mail Associado</label>
+                <i class="bi bi-envelope"></i>
+                <input type="email" class="form-control ff-form-control" @bind="newEmail" readonly />
+            </div>
+
+            <div class="ff-input-group">
+                <label class="ff-label-small">Nova Palavra-Passe (Deixe vazio se não quiser alterar)</label>
+                <i class="bi bi-key"></i>
+                <input type="password" class="form-control ff-form-control" @bind="newPass" placeholder="••••••••" />
+            </div>
+
+            <div class="d-flex flex-column gap-2 mt-4">
+                <button class="btn btn-primary py-3 fw-bold shadow-sm" style="background-color: var(--ff-dark-blue); border: none;" @onclick="Update">
+                    GRAVAR ALTERAÇÕES
+                </button>
+                
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <button class="btn btn-link text-decoration-none text-danger small fw-bold" @onclick="ForgotPassword">
+                        <i class="bi bi-question-circle me-1"></i>Esqueci-me da senha
+                    </button>
+                    <button class="btn btn-light border px-4" @onclick='() => Navigation.NavigateTo("/Utilizadores/Ver")'>
+                        Voltar
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(msg)) { 
+                <div class="alert alert-danger mt-4 border-0 shadow-sm d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @msg
+                </div> 
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private string oldPass = "", newUsername = "", newEmail = "", newPass = "", msg = "";
+
+    protected override async Task OnInitializedAsync() {
+        if (!UserSession.IsLoggedIn) { Navigation.NavigateTo("/login"); return; }
+        var u = await AuthService.GetUserByIdAsync(Id);
+        if (u != null) { newUsername = u.Username; newEmail = u.Email?.Value ?? ""; }
+    }
+
+    private async Task Update() {
+        try {
+            if(string.IsNullOrWhiteSpace(oldPass)) {
+                msg = "É necessário confirmar a sua senha atual.";
+                return;
+            }
+            await AuthService.UpdateUserAsync(Id, oldPass, newUsername, newEmail, newPass);
+            Navigation.NavigateTo("/Utilizadores/Ver");
+        } catch (Exception ex) { msg = ex.Message; }
+    }
+
+    private async Task ForgotPassword() {
+        try {
+            await AuthService.RequestPasswordResetAsync(newEmail);
+            Navigation.NavigateTo($"/Utilizadores/Recuperar/{newEmail}");
+        } catch (Exception ex) { msg = ex.Message; }
+    }
+}

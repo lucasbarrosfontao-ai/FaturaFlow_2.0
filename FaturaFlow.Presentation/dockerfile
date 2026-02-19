@@ -1,0 +1,22 @@
+# Estágio de Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copiar os ficheiros de projeto (.csproj) primeiro para cache de restauro
+COPY ["FaturaFlow.Presentation/FaturaFlow.Presentation.csproj", "FaturaFlow.Presentation/"]
+COPY ["FaturaFlow.Application/FaturaFlow.Application.csproj", "FaturaFlow.Application/"]
+COPY ["FaturaFlow.Domain/FaturaFlow.Domain.csproj", "FaturaFlow.Domain/"]
+COPY ["FaturaFlow.Infrastructure/FaturaFlow.Infrastructure.csproj", "FaturaFlow.Infrastructure/"]
+
+RUN dotnet restore "FaturaFlow.Presentation/FaturaFlow.Presentation.csproj"
+
+# Copiar o resto do código
+COPY . .
+WORKDIR "/src/FaturaFlow.Presentation"
+RUN dotnet publish "FaturaFlow.Presentation.csproj" -c Release -o /app/publish
+
+# Estágio Final (Runtime)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "FaturaFlow.Presentation.dll"]

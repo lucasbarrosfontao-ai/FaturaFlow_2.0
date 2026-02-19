@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="FaturaFlow.Presentation.styles.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    @* Adicionado RenderMode aqui para o Título e Meta tags *@
+    <HeadOutlet @rendermode="RenderMode.InteractiveServer" />
+</head>
+
+<body>
+    @* Adicionado RenderMode aqui para que os botões e eventos funcionem em todas as páginas *@
+    <Routes @rendermode="RenderMode.InteractiveServer" />
+    
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

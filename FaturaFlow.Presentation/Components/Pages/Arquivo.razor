@@ -1,0 +1,316 @@
+@page "/arquivo"
+@using System.Globalization
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+
+@inject CustomerService CustomerService
+@inject SupplierService SupplierService
+@inject ProductService ProductService
+@inject UserSession UserSession
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Arquivo - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-bg-light: #f8fafc;
+    }
+
+    .ff-archive-header {
+        background-color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border-left: 6px solid #64748b; /* Cor de arquivo/cinza */
+    }
+
+    /* Estilização das Tabs */
+    .ff-tabs {
+        background: #e2e8f0;
+        padding: 5px;
+        border-radius: 12px;
+        display: inline-flex;
+        margin-bottom: 1.5rem;
+    }
+
+    .ff-tab-btn {
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        color: #64748b;
+        background: transparent;
+        transition: all 0.3s;
+    }
+
+    .ff-tab-btn.active {
+        background: white;
+        color: var(--ff-blue);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .ff-tab-btn:hover:not(.active) {
+        color: var(--ff-dark-blue);
+        background: rgba(255,255,255,0.5);
+    }
+
+    /* Card e Tabela */
+    .ff-archive-card {
+        background: white;
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .ff-table thead {
+        background-color: var(--ff-dark-blue);
+        color: white;
+    }
+
+    .ff-table th {
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        padding: 15px;
+        border: none;
+    }
+
+    .ff-table td {
+        padding: 15px;
+        color: #475569;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .ff-btn-reactivate {
+        background-color: var(--ff-cyan);
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .ff-btn-reactivate:hover {
+        background-color: #00a4b8;
+        transform: scale(1.05);
+        color: white;
+    }
+
+    .ff-empty-state {
+        padding: 60px;
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .ff-empty-state i {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 15px;
+        opacity: 0.3;
+    }
+</style>
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning text-center shadow-sm">
+            <i class="bi bi-shield-lock fs-2 d-block mb-2"></i>
+            <h4>Acesso Restrito</h4>
+            <button class="btn btn-primary mt-3" @onclick='() => Navigation.NavigateTo("/login")'>Ir para Login</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <!-- CABEÇALHO -->
+        <div class="ff-archive-header d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold text-dark mb-1"><i class="bi bi-archive me-2 text-secondary"></i>Arquivo de Dados</h2>
+                <p class="text-muted mb-0 small">Consulte e recupere registos que foram desativados do sistema.</p>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm fw-bold" @onclick='() => Navigation.NavigateTo("/")'>
+                <i class="bi bi-arrow-left me-1"></i> DASHBOARD
+            </button>
+        </div>
+
+        <!-- SELETOR DE CATEGORIA -->
+        <div class="ff-tabs">
+            <button class="ff-tab-btn @(activeTab == "clientes" ? "active" : "")" @onclick='() => SetTab("clientes")'>
+                <i class="bi bi-people me-2"></i>Clientes
+            </button>
+            <button class="ff-tab-btn @(activeTab == "fornecedores" ? "active" : "")" @onclick='() => SetTab("fornecedores")'>
+                <i class="bi bi-truck me-2"></i>Fornecedores
+            </button>
+            <button class="ff-tab-btn @(activeTab == "produtos" ? "active" : "")" @onclick='() => SetTab("produtos")'>
+                <i class="bi bi-box-seam me-2"></i>Produtos
+            </button>
+        </div>
+
+        <!-- CONTEÚDO -->
+        <div class="ff-archive-card">
+            @if (isLoading)
+            {
+                <div class="text-center p-5">
+                    <div class="spinner-border text-cyan" role="status"></div>
+                    <p class="mt-3 text-muted">A ler arquivos...</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    @if (activeTab == "clientes")
+                    {
+                        <table class="table ff-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Cliente</th>
+                                    <th>NIF / Identificação</th>
+                                    <th>Localidade</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in clientesInativos)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@c.Name</td>
+                                        <td><span class="badge bg-light text-dark border fw-normal">@(c.NIF?.Value ?? "---")</span></td>
+                                        <td><i class="bi bi-geo-alt me-1 text-muted"></i>@c.City</td>
+                                        <td class="text-center">
+                                            <button class="ff-btn-reactivate shadow-sm" @onclick="() => ReativarCliente(c.Id, c.Name)">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i> REATIVAR
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (!clientesInativos.Any()) { <div class="ff-empty-state"><i class="bi bi-people"></i><p>Não existem clientes no arquivo.</p></div> }
+                    }
+                    else if (activeTab == "fornecedores")
+                    {
+                        <table class="table ff-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Empresa / Fornecedor</th>
+                                    <th>NIPC</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var f in fornecedoresInativos)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@f.CompanyName</td>
+                                        <td><span class="badge bg-light text-dark border fw-normal">@(f.NIPC?.Value ?? "---")</span></td>
+                                        <td class="text-center">
+                                            <button class="ff-btn-reactivate shadow-sm" @onclick="() => ReativarFornecedor(f.Id, f.CompanyName)">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i> REATIVAR
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (!fornecedoresInativos.Any()) { <div class="ff-empty-state"><i class="bi bi-truck"></i><p>Arquivo de fornecedores vazio.</p></div> }
+                    }
+                    else if (activeTab == "produtos")
+                    {
+                        <table class="table ff-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Referência</th>
+                                    <th>Descrição do Produto</th>
+                                    <th>Preço (Venda)</th>
+                                    <th class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in produtosInativos)
+                                {
+                                    <tr>
+                                        <td><code>@p.Reference</code></td>
+                                        <td class="fw-bold">@p.Name</td>
+                                        <td class="text-primary fw-semibold">@p.SalePrice.Value.ToString("C2", new CultureInfo("pt-PT"))</td>
+                                        <td class="text-center">
+                                            <button class="ff-btn-reactivate shadow-sm" @onclick="() => ReativarProduto(p.Id, p.Name)">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i> REATIVAR
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (!produtosInativos.Any()) { <div class="ff-empty-state"><i class="bi bi-box-seam"></i><p>Nenhum produto inativo encontrado.</p></div> }
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private string activeTab = "clientes";
+    private bool isLoading = true;
+
+    private List<Customer> clientesInativos = new();
+    private List<Supplier> fornecedoresInativos = new();
+    private List<Product> produtosInativos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserSession.IsLoggedIn)
+        {
+            await CarregarDados();
+        }
+    }
+
+    private async Task CarregarDados()
+    {
+        isLoading = true;
+        clientesInativos = (await CustomerService.GetInactiveAsync()).ToList();
+        fornecedoresInativos = (await SupplierService.GetInactiveAsync()).ToList();
+        produtosInativos = (await ProductService.GetInactiveAsync()).ToList();
+        isLoading = false;
+    }
+
+    private void SetTab(string tab) => activeTab = tab;
+
+    private async Task ReativarCliente(Guid id, string nome)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Reativar o cliente {nome}?"))
+        {
+            await CustomerService.ActivateAsync(id);
+            await CarregarDados();
+        }
+    }
+
+    private async Task ReativarFornecedor(Guid id, string nome)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Reativar o fornecedor {nome}?"))
+        {
+            await SupplierService.ActivateAsync(id);
+            await CarregarDados();
+        }
+    }
+
+    private async Task ReativarProduto(Guid id, string nome)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Reativar o produto {nome}?"))
+        {
+            await ProductService.ActivateAsync(id);
+            await CarregarDados();
+        }
+    }
+}

@@ -1,0 +1,277 @@
+@page "/Vendas/VisaoGeral"
+@using ApexCharts
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Application.DTOs
+@using FaturaFlow.Presentation.Services
+
+@inject SalesService SalesService
+@inject UserSession UserSession 
+@inject NavigationManager Navigation
+
+<PageTitle>Visão Geral de Vendas - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-bg: #f4f7f9;
+    }
+
+    .ff-header-section {
+        background: white;
+        padding: 1.5rem 2rem;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        margin-bottom: 2rem;
+    }
+
+    /* Cards de Indicadores (KPIs) */
+    .ff-kpi-card {
+        background: white;
+        border: none;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s;
+        border-bottom: 4px solid transparent;
+    }
+    .ff-kpi-card:hover { transform: translateY(-5px); }
+    .ff-kpi-blue { border-bottom-color: var(--ff-blue); }
+    .ff-kpi-cyan { border-bottom-color: var(--ff-cyan); }
+    .ff-kpi-dark { border-bottom-color: var(--ff-dark-blue); }
+
+    .ff-kpi-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: block;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Estilização dos Gráficos */
+    .ff-chart-card {
+        background: white;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+    .ff-chart-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .ff-chart-title {
+        font-weight: 700;
+        color: var(--ff-dark-blue);
+        margin-bottom: 0;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ff-update-btn {
+        background-color: var(--ff-cyan);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .ff-update-btn:hover {
+        background-color: #00a4b8;
+        box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+    }
+</style>
+
+@if (!UserSession.IsLoggedIn)
+{
+    <div class="container mt-5 text-center">
+        <div class="p-5 bg-white rounded-4 shadow-sm">
+            <i class="bi bi-lock-fill text-primary display-1"></i>
+            <h2 class="mt-3 fw-bold">Acesso Restrito</h2>
+            <p class="text-muted">Inicie sessão para visualizar os relatórios de vendas.</p>
+            <button class="btn btn-primary px-5 py-2" @onclick='() => Navigation.NavigateTo("/login")'>LOGIN</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid pb-5 px-4">
+        
+        <!-- HEADER -->
+        <div class="ff-header-section d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <h2 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-pie-chart-fill text-primary me-2"></i>Análise de Vendas
+                </h2>
+                <span class="text-muted small">Relatórios financeiros em tempo real</span>
+            </div>
+            <button class="ff-update-btn shadow-sm" @onclick="LoadDashboardData">
+                <i class="bi bi-arrow-clockwise me-1"></i> ATUALIZAR DADOS
+            </button>
+        </div>
+
+        @if (stats == null)
+        {
+            <div class="text-center p-5 mt-5">
+                <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                <p class="mt-3 fw-bold text-muted">A gerar relatórios financeiros...</p>
+            </div>
+        }
+        else
+        {
+            <!-- ROW 1: KPI CARDS (Calculados a partir das listas existentes) -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="ff-kpi-card ff-kpi-blue">
+                        <div class="ff-kpi-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <h6 class="text-muted fw-bold small text-uppercase">Hoje (Últimas 24h)</h6>
+                        <h3 class="fw-bold mb-0 text-dark">@stats.Last24Hours.Sum(x => x.Value).ToString("C2", new System.Globalization.CultureInfo("pt-PT"))</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="ff-kpi-card ff-kpi-cyan">
+                        <div class="ff-kpi-icon" style="background-color: #e0f7fa; color: var(--ff-cyan);">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <h6 class="text-muted fw-bold small text-uppercase">Últimos 7 Dias</h6>
+                        <h3 class="fw-bold mb-0 text-dark">@stats.Last7Days.Sum(x => x.Value).ToString("C2", new System.Globalization.CultureInfo("pt-PT"))</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="ff-kpi-card ff-kpi-dark">
+                        <div class="ff-kpi-icon" style="background-color: #e8ebef; color: var(--ff-dark-blue);">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <h6 class="text-muted fw-bold small text-uppercase">Total Anual (Mensal)</h6>
+                        <h3 class="fw-bold mb-0 text-dark">@stats.Last12Months.Sum(x => x.Value).ToString("C2", new System.Globalization.CultureInfo("pt-PT"))</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- 1. GRÁFICO: ÚLTIMAS 24 HORAS -->
+                <div class="col-lg-6">
+                    <div class="ff-chart-card shadow-sm">
+                        <div class="ff-chart-header">
+                            <h5 class="ff-chart-title">Distribuição Horária (24h)</h5>
+                            <i class="bi bi-clock-history text-muted"></i>
+                        </div>
+                        <div class="p-3">
+                            <ApexChart TItem="ChartDataPoint" Options="optionsBar" @key="stats.Last24Hours.Count">
+                                <ApexPointSeries TItem="ChartDataPoint" Items="stats.Last24Hours" Name="Faturado"
+                                                SeriesType="SeriesType.Bar"
+                                                XValue="@(e => e.Label)" YValue="@(e => e.Value)" />
+                            </ApexChart>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. GRÁFICO: ÚLTIMOS 7 DIAS -->
+                <div class="col-lg-6">
+                    <div class="ff-chart-card shadow-sm">
+                        <div class="ff-chart-header">
+                            <h5 class="ff-chart-title">Volume Semanal</h5>
+                            <i class="bi bi-calendar-week text-muted"></i>
+                        </div>
+                        <div class="p-3">
+                            <ApexChart TItem="ChartDataPoint" Options="optionsArea" @key="stats.Last7Days.Count">
+                                <ApexPointSeries TItem="ChartDataPoint" Items="stats.Last7Days" Name="Euros"
+                                                SeriesType="SeriesType.Area"
+                                                XValue="@(e => e.Label)" YValue="@(e => e.Value)" />
+                            </ApexChart>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. GRÁFICO: ÚLTIMOS 12 MESES -->
+                <div class="col-12">
+                    <div class="ff-chart-card shadow-sm">
+                        <div class="ff-chart-header">
+                            <h5 class="ff-chart-title">Performance Anual Consolidada</h5>
+                            <span class="badge bg-primary-subtle text-primary px-3">Dados Mensais</span>
+                        </div>
+                        <div class="p-4">
+                            <ApexChart TItem="ChartDataPoint" Options="optionsLine" @key="stats.Last12Months.Count">
+                                <ApexPointSeries TItem="ChartDataPoint" Items="stats.Last12Months" Name="Total Mensal"
+                                                SeriesType="SeriesType.Line"
+                                                XValue="@(e => e.Label)" YValue="@(e => e.Value)" />
+                            </ApexChart>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private SalesAnalyticsDto? stats;
+    
+    // Criei 3 opções diferentes para dar cores e estilos distintos a cada gráfico
+    private ApexChartOptions<ChartDataPoint> optionsBar = new();
+    private ApexChartOptions<ChartDataPoint> optionsArea = new();
+    private ApexChartOptions<ChartDataPoint> optionsLine = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserSession.IsLoggedIn) return;
+        
+        ConfigurarGraficos();
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        stats = null; 
+        stats = await SalesService.GetSalesAnalyticsAsync();
+    }
+
+    private void ConfigurarGraficos()
+    {
+        // Configuração Padrão para Moeda
+        var yAxisConfig = new List<YAxis> { 
+            new YAxis { 
+                Labels = new YAxisLabels { 
+                    Formatter = "function(v) { return v.toLocaleString('pt-PT') + ' €'; }" 
+                } 
+            } 
+        };
+
+        // 24h - Gráfico de Barras em CIANO
+        optionsBar = new ApexChartOptions<ChartDataPoint> {
+            Chart = new Chart { Toolbar = new Toolbar { Show = false }, Animations = new Animations { Enabled = true } },
+            Colors = new List<string> { "#00bcd4" },
+            Yaxis = yAxisConfig,
+            PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { BorderRadius = 4 } }
+        };
+
+        // 7 Dias - Gráfico de Área em AZUL
+        optionsArea = new ApexChartOptions<ChartDataPoint> {
+            Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+            Colors = new List<string> { "#0056b3" },
+            Yaxis = yAxisConfig,
+            Stroke = new Stroke { Curve = ApexCharts.Curve.Smooth, Width = 3 },
+            Fill = new Fill { Type = FillType.Gradient, Gradient = new FillGradient { ShadeIntensity = 1, OpacityFrom = 0.7, OpacityTo = 0.2 } }
+        };
+
+        // 12 Meses - Gráfico de Linha em AZUL ESCURO
+        optionsLine = new ApexChartOptions<ChartDataPoint> {
+            Chart = new Chart { Toolbar = new Toolbar { Show = true } },
+            Colors = new List<string> { "#002d5b" },
+            Yaxis = yAxisConfig,
+            Stroke = new Stroke { Width = 4, Curve = ApexCharts.Curve.Straight },
+            Markers = new Markers { Size = 6, Hover = new MarkersHover { Size = 8 } }
+        };
+    }
+}

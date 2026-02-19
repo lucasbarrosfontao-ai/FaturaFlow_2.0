@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11505.172 d18.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaturaFlow.Infrastructure", "FaturaFlow.Infrastructure.csproj", "{EAFA0495-C2CB-9700-E38D-5ED873EE5ABE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EAFA0495-C2CB-9700-E38D-5ED873EE5ABE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAFA0495-C2CB-9700-E38D-5ED873EE5ABE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAFA0495-C2CB-9700-E38D-5ED873EE5ABE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAFA0495-C2CB-9700-E38D-5ED873EE5ABE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C37AFF26-DAB4-4451-B628-86CA2A12002B}
+	EndGlobalSection
+EndGlobal
