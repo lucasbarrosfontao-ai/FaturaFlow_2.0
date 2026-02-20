@@ -35,6 +35,7 @@ namespace FaturaFlow.Infrastructure.Repositories
             catch (DbUpdateException ex)
             {
                 HandleDbException(ex);
+                
             }
         }
 
@@ -65,12 +66,12 @@ namespace FaturaFlow.Infrastructure.Repositories
             throw ex;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeactivateAsync(Guid id)
         {
             var product = await GetByIdAsync(id);
             if (product != null)
             {
-                _context.Products.Remove(product);
+                product.Deactivate();
                 await _context.SaveChangesAsync();
             }
         }

@@ -189,7 +189,7 @@ else
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Deseja eliminar o cliente '{client.Name}'?");
         if (confirmed)
         {
-            await CustomerService.DeleteAsync(client.Id);
+            await CustomerService.Deactivate(client.Id);
             await LoadClients();
         }
     }

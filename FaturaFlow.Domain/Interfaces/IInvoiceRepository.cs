@@ -8,7 +8,6 @@ namespace FaturaFlow.Domain.Interfaces
         Task<IEnumerable<Invoice>> GetAllAsync();
         Task AddAsync(Invoice invoice);
         Task UpdateAsync(Invoice invoice);
-        Task DeleteAsync(Guid id);
     }
 }
 

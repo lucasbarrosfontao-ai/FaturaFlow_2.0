@@ -38,14 +38,4 @@ public class InvoiceRepository : IInvoiceRepository
         _context.Invoices.Update(Invoice);
         await _context.SaveChangesAsync();
     }
-
-    public async Task DeleteAsync(Guid id)
-    {
-        var Invoice = await GetByIdAsync(id);
-        if (Invoice != null)
-        {
-            _context.Invoices.Remove(Invoice);
-            await _context.SaveChangesAsync();
-        }
-    }
 }

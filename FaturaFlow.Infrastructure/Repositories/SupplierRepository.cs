@@ -68,12 +68,12 @@ namespace FaturaFlow.Infrastructure.Repositories
             throw ex;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeactivateAsync(Guid id)
         {
-            var Supplier = await GetByIdAsync(id);
-            if (Supplier != null)
+            var supplier = await GetByIdAsync(id);
+            if (supplier != null)
             {
-                _context.Suppliers.Remove(Supplier);
+                supplier.Deactivate();
                 await _context.SaveChangesAsync();
             }
         }

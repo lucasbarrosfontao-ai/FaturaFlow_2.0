@@ -73,12 +73,21 @@ namespace FaturaFlow.Infrastructure.Repositories
 
             throw ex; // Se não for erro de duplicidade, lança o erro original
         }
-        public async Task DeleteAsync(Guid id)
+        public async Task DeactivateAsync(Guid id)
         {
             var customer = await GetByIdAsync(id);
             if (customer != null)
             {
-                _context.Customers.Remove(customer);
+                customer.Deactivate();
+                await _context.SaveChangesAsync();
+            }
+        }
+        public async Task ActiveAsync(Guid id)
+        {
+            var customer = await GetByIdAsync(id);
+            if (customer != null)
+            {
+                customer.Activate();
                 await _context.SaveChangesAsync();
             }
         }

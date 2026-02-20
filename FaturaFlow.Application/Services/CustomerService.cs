@@ -52,16 +52,13 @@ public class CustomerService
             throw new Exception($"Erro ao salvar cliente: {ex.Message}");
         }
     }
-    public async Task DeleteAsync(Guid id)
+    public async Task Deactivate(Guid id)
     {
         var customer = await _customerRepo.GetByIdAsync(id);
         if (customer != null)
         {
             // Em DDD, geralmente fazemos Soft Delete (desativar)
-            // customer.Deactivate(); 
-            await _customerRepo.UpdateAsync(customer);
-            // Ou delete real:
-            await _customerRepo.DeleteAsync(id);
+            customer.Deactivate(); 
         }
     }
     // Adicione estes dois métodos dentro da classe CustomerService

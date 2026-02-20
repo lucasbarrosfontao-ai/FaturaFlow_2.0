@@ -58,7 +58,6 @@ public class SupplierService
             await _supplierRepo.UpdateAsync(supplier);
         }
     }
-    // Adicione estes dois métodos dentro da classe SupplierService
     public async Task<IEnumerable<Supplier>> GetInactiveAsync()
     {
         var all = await _supplierRepo.GetAllAsync();

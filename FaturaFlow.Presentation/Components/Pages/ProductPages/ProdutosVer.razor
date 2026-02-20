@@ -88,8 +88,13 @@ else
                                 <td class="ff-td text-muted">@product.PurchasePrice.Value.ToString("C2", new CultureInfo("pt-PT"))</td>
                                 <td class="ff-td">
                                     <span class="price-tag">@product.SalePrice.Value.ToString("C2", new CultureInfo("pt-PT"))</span>
-                                    @if(product.SalePrice.Value > product.PurchasePrice.Value) {
+                                    @if(product.SalePrice.Value > product.PurchasePrice.Value) 
+                                    {
                                         <span class="profit-text"><i class="bi bi-graph-up me-1"></i>Margem Positiva</span>
+                                    }
+                                    else if (product.SalePrice.Value < product.PurchasePrice.Value)
+                                    {
+                                        <span class="profit-text"><i class ="bi bi-graph-down me-1"></i>Margem Negativa</span>
                                     }
                                 </td>
                                 <td class="ff-td text-center">

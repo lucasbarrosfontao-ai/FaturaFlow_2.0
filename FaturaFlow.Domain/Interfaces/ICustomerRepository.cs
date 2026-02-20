@@ -10,6 +10,7 @@ namespace FaturaFlow.Domain.Interfaces
         Task<IEnumerable<Customer>> GetAllAsync();
         Task AddAsync(Customer customer);
         Task UpdateAsync(Customer customer);
-        Task DeleteAsync(Guid id);
+        Task DeactivateAsync(Guid id);
+        Task ActiveAsync(Guid id);
     }
 }
