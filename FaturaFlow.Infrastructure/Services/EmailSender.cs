@@ -27,7 +27,6 @@ public class EmailSender : IEmailSender
         EnableSsl = true
     };
 
-    // AQUI ESTAVA O ERRO: Use a variável 'remetente' em vez de 'user'
     var mailMessage = new MailMessage(remetente, to, subject, body) { IsBodyHtml = true };
     
     await client.SendMailAsync(mailMessage);

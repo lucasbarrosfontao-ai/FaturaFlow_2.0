@@ -103,7 +103,8 @@ public class Worker : BackgroundService
         };
         await channel.BasicConsumeAsync("recuperacao_queue", autoAck: false, consumer: recConsumer);
 
-        _logger.LogInformation("Worker escutando RabbitMQ...");
+                _logger.LogInformation("Worker escutando RabbitMQ");
+        
 
         while (!stoppingToken.IsCancellationRequested)
         {

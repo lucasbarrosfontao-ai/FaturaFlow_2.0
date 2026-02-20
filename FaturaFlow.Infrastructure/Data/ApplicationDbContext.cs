@@ -43,7 +43,6 @@ namespace FaturaFlow.Infrastructure.Data
                 entity.HasKey(p => p.Id);
                 entity.Property(p => p.PurchasePrice).HasConversion(v => v.Value, v => new Price(v));
                 entity.Property(p => p.SalePrice).HasConversion(v => v.Value, v => new Price(v));
-                // AJUSTE AQUI: O nome na classe Product é 'Vat'
                 entity.Property(p => p.VatRate).HasConversion(v => v.Value, v => new VatRate(v));
             });
 
@@ -58,8 +57,6 @@ namespace FaturaFlow.Infrastructure.Data
             {
                 entity.HasKey(l => l.Id);
                 entity.Property(l => l.UnitPrice).HasConversion(v => v.Value, v => new Price(v));
-                
-                // O ERRO ESTAVA AQUI: Faltava o mapeamento do VatRate na linha da fatura!
                 entity.Property(l => l.VatRate).HasConversion(v => v.Value, v => new VatRate(v));
             });
 
