@@ -1,4 +1,4 @@
-@page "/Faturas/Criar"
+@page "/faturas/editar/{InvoiceId:guid}"
 @using System.Globalization
 @using FaturaFlow.Application.Services
 @using FaturaFlow.Domain.Entities
@@ -11,7 +11,7 @@
 @inject UserSession UserSession
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Emitir Fatura - FaturaFlow</PageTitle>
+<PageTitle>Editar Rascunho de Fatura - FaturaFlow</PageTitle>
 
 <style>
     :root {
@@ -41,6 +41,10 @@
 
     .btn-primary { background-color: var(--ff-blue); border: none; }
     .btn-primary:hover { background-color: var(--ff-dark-blue); }
+
+    .btn-emitir { background-color: #28a745; border: none; } /* Verde para Emitir */
+    .btn-emitir:hover { background-color: #218838; }
+
 </style>
 
 @if (!UserSession.IsLoggedIn)
@@ -54,13 +58,32 @@
         </div>
     </div>
 }
+else if (isLoading)
+{
+    <div class="container mt-5 text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="text-muted mt-2">Carregando dados da fatura...</p>
+    </div>
+}
+else if (invoice == null)
+{
+    <div class="container mt-5 text-center">
+        <div class="alert alert-danger shadow-sm" role="alert">
+            <h4 class="alert-heading">Fatura Não Encontrada ou Não Editável</h4>
+            <p>A fatura que você tentou acessar não existe ou não está em status de rascunho.</p>
+            <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/Faturas/Ver")'>Voltar para Faturas</button>
+        </div>
+    </div>
+}
 else
 {
     <div class="container py-4">
         <div class="card ff-card">
             <div class="ff-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0 fw-bold"><i class="bi bi- receipt-cutoff me-2"></i>EMISSÃO DE FATURA</h4>
-                <span class="badge bg-light text-dark">Rascunho</span>
+                <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i>EDITAR RASCUNHO DE FATURA</h4>
+                <span class="badge bg-warning text-dark">Rascunho</span>
             </div>
             
             <div class="card-body p-4">
@@ -82,7 +105,7 @@ else
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold text-muted small">Data de Emissão</label>
-                        <input type="date" class="form-control ff-input-group p-2" @bind="invoiceDate" />
+                        <input type="date" class="form-control ff-input-group p-2" @bind="invoiceDate" disabled /> @* Data de emissão de rascunho geralmente não é editável *@
                     </div>
                 </div>
 
@@ -139,7 +162,9 @@ else
                                 </tr>
                             }
                             @foreach (var item in tempItems) {
-                                var p = products.First(x => x.Id == item.ProdId);
+                                var p = products.FirstOrDefault(x => x.Id == item.ProdId);
+                                if (p == null) continue; // Garante que o produto existe
+
                                 <tr>
                                     <td class="fw-bold text-dark">@p.Name</td>
                                     <td class="text-center">
@@ -149,7 +174,7 @@ else
                                     <td class="text-end"><span class="text-muted small">(@p.VatRate.Value%)</span></td>
                                     <td class="text-end fw-bold">@((item.Qty * item.Price).ToString("C2", new CultureInfo("pt-PT")))</td>
                                     <td class="text-center">
-                                        <button class="btn btn-outline-danger btn-sm border-0" @onclick="() => tempItems.Remove(item)" title="Remover item">
+                                        <button class="btn btn-outline-danger btn-sm border-0" @onclick='() => RemoveItemFromList(item)' title="Remover item">
                                             <i class="bi bi-trash3-fill"></i>
                                         </button>
                                     </td>
@@ -169,7 +194,7 @@ else
                             </div> 
                         }
                         <div class="text-muted small">
-                            <i class="bi bi-info-circle me-1"></i> Certifique-se de que todos os dados do cliente e produtos estão corretos antes de guardar.
+                            <i class="bi bi-info-circle me-1"></i> Certifique-se de que todos os dados do cliente e produtos estão corretos antes de guardar ou emitir.
                         </div>
                     </div>
                     <div class="col-lg-5">
@@ -190,23 +215,18 @@ else
                         
                         <div class="d-flex gap-3 mt-4">
                             <button class="btn btn-light border flex-grow-1 py-2 fw-semibold" @onclick='() => Navigation.NavigateTo("/Faturas/Ver")'>
-                                VOLTAR
+                                CANCELAR
                             </button>
-                            <div class="d-flex gap-2 mt-4">
-                                <!-- Botão de Guardar Rascunho - Ação Secundária -->
-                                <button class="btn btn-outline-secondary flex-grow-1 py-2 fw-semibold" 
-                                        @onclick="SaveDraft" 
-                                        disabled="@(!tempItems.Any() || selectedCustomerId == Guid.Empty)">
-                                    <i class="bi bi-save me-2"></i>GUARDAR RASCUNHO
-                                </button>
-                                
-                                <!-- Botão de Finalizar Fatura - Ação Principal -->
-                                <button class="btn btn-primary flex-grow-1 py-2 fw-bold shadow" 
-                                        @onclick="EmitInvoice" 
-                                        disabled="@(!tempItems.Any() || selectedCustomerId == Guid.Empty)">
-                                    <i class="bi bi-check2-circle-fill me-2"></i>FINALIZAR E EMITIR
-                                </button>
-                            </div>
+                            <button class="btn btn-primary flex-grow-1 py-2 fw-bold shadow-sm" 
+                                    @onclick="HandleUpdateDraft" 
+                                    disabled="@(!tempItems.Any() || selectedCustomerId == Guid.Empty)">
+                                <i class="bi bi-save2-fill me-2"></i>ATUALIZAR RASCUNHO
+                            </button>
+                            <button class="btn btn-emitir flex-grow-1 py-2 fw-bold shadow-sm" 
+                                    @onclick="HandleEmitInvoice" 
+                                    disabled="@(!tempItems.Any() || selectedCustomerId == Guid.Empty)">
+                                <i class="bi bi-check2-all me-2"></i>EMITIR FATURA
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -216,8 +236,10 @@ else
 }
 
 @code {
+    [Parameter] public Guid InvoiceId { get; set; }
+    private Invoice? invoice;
     private Guid selectedCustomerId = Guid.Empty;
-    private string invoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmm}";
+    private string invoiceNumber = "";
     private DateTime invoiceDate = DateTime.Now;
 
     private List<Customer> customers = new();
@@ -227,70 +249,128 @@ else
     private int tempQty = 1;
     private decimal tempPrice = 0;
     private string msg = "";
+    private bool isLoading = true;
 
     private class LocalItem { public Guid ProdId { get; set; } public int Qty { get; set; } public decimal Price { get; set; } }
     private List<LocalItem> tempItems = new();
 
-    protected override async Task OnInitializedAsync() 
-    {
-        if (!UserSession.IsLoggedIn) return;
-        customers = (await CustomerService.GetAllActiveAsync()).ToList();
-        products = (await ProductService.GetAllActiveAsync()).ToList();
-    }
+    protected override async Task OnInitializedAsync() {
+        if (!UserSession.IsLoggedIn) { Navigation.NavigateTo("/login"); return; }
 
-    private void OnProductSelected(ChangeEventArgs e) 
-    {
-        if (Guid.TryParse(e.Value?.ToString(), out Guid id) && id != Guid.Empty) {
-            tempProdId = id;
-            tempPrice = products.First(p => p.Id == id).SalePrice.Value;
+        try {
+            // MELHORIA: Usar o método que já valida se o status é "Rascunho"
+            // Se a fatura já estiver "Emitida", o Service vai lançar uma Exception e cair no Catch abaixo
+            invoice = await InvoiceService.GetInvoiceForEditAsync(InvoiceId);
+
+            if (invoice != null) {
+                selectedCustomerId = invoice.CustomerId;
+                invoiceNumber = invoice.InvoiceNumber;
+                invoiceDate = invoice.IssueDate;
+
+                customers = (await CustomerService.GetAllActiveAsync()).ToList();
+                products = (await ProductService.GetAllActiveAsync()).ToList();
+
+                tempItems.Clear();
+                foreach (var line in invoice.Lines) {
+                    tempItems.Add(new LocalItem { 
+                        ProdId = line.ProductId, 
+                        Qty = line.Quantity, 
+                        Price = line.UnitPrice.Value 
+                    });
+                }
+            }
+        } catch (Exception ex) {
+            // Se tentar editar uma fatura que não é rascunho, a mensagem aparece aqui
+            msg = ex.Message; 
+            invoice = null; 
+        } finally {
+            isLoading = false;
         }
     }
 
-    private void AddItemToList() 
-    {
-        if (tempProdId == Guid.Empty || tempQty <= 0) return;
-        tempItems.Add(new LocalItem { ProdId = tempProdId, Qty = tempQty, Price = tempPrice });
-        tempProdId = Guid.Empty; tempQty = 1; tempPrice = 0;
+    private void OnProductSelected(ChangeEventArgs e) {
+        if (Guid.TryParse(e.Value?.ToString(), out Guid id) && id != Guid.Empty) {
+            var prod = products.FirstOrDefault(p => p.Id == id);
+            if (prod != null) {
+                tempProdId = id;
+                tempPrice = prod.SalePrice.Value;
+            }
+        } else {
+            tempProdId = Guid.Empty;
+            tempPrice = 0;
+        }
     }
 
-    private (decimal net, decimal vat, decimal total) CalculateTotal() 
-    {
+    private void AddItemToList() {
+        if (tempProdId == Guid.Empty || tempQty <= 0) {
+            msg = "Selecione um produto e uma quantidade válida.";
+            return;
+        }
+        
+        // Se o produto já existe na lista, apenas soma a quantidade
+        var existing = tempItems.FirstOrDefault(i => i.ProdId == tempProdId);
+        if (existing != null) {
+            existing.Qty += tempQty;
+        } else {
+            tempItems.Add(new LocalItem { ProdId = tempProdId, Qty = tempQty, Price = tempPrice });
+        }
+
+        tempProdId = Guid.Empty; tempQty = 1; tempPrice = 0;
+        msg = "";
+    }
+
+    private void RemoveItemFromList(LocalItem itemToRemove) {
+        tempItems.Remove(itemToRemove);
+    }
+
+    private (decimal net, decimal vat, decimal total) CalculateTotal() {
         decimal n = 0; decimal v = 0;
         foreach (var i in tempItems) {
-            var p = products.First(x => x.Id == i.ProdId);
+            var p = products.FirstOrDefault(x => x.Id == i.ProdId);
+            if (p == null) continue;
+
             n += i.Qty * i.Price;
             v += (i.Qty * i.Price) * (p.VatRate.Value / 100);
         }
         return (n, v, n + v);
     }
 
-     private async Task SaveDraft() 
-    {
+    private async Task HandleUpdateDraft() {
         try {
             msg = "";
+            if (selectedCustomerId == Guid.Empty || !tempItems.Any()) {
+                msg = "Verifique o cliente e os itens."; return;
+            }
+
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            // Chama o método específico de Rascunho (Não baixa estoque)
-            await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, items);
+            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, items);
             
-            await JSRuntime.InvokeVoidAsync("alert", "Rascunho guardado com sucesso!");
+            await JSRuntime.InvokeVoidAsync("alert", "Rascunho atualizado com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
-        } 
-        catch (Exception ex) { msg = ex.Message; }
+        } catch (Exception ex) { msg = ex.Message; }
     }
 
-    private async Task EmitInvoice() 
-    {
+    private async Task HandleEmitInvoice() {
         try {
             msg = "";
-            var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            
-            // Fluxo correto: Cria como rascunho e depois Emite (baixando estoque)
-            var id = await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, items);
-            await InvoiceService.EmitInvoiceAsync(id);
+            if (selectedCustomerId == Guid.Empty || !tempItems.Any()) {
+                msg = "Verifique o cliente e os itens."; return;
+            }
 
-            await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso e stock atualizado!");
+            // Confirmação simples antes de baixar stock e emitir
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Deseja emitir esta fatura? Esta ação baixará o stock e não poderá ser desfeita.");
+            if (!confirmed) return;
+
+            var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
+
+            // 1. Atualiza o rascunho para garantir que as últimas alterações na tela sejam salvas
+            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, items);
+
+            // 2. Emite a fatura (o Service tratará da baixa de stock e envio de email)
+            await InvoiceService.EmitInvoiceAsync(InvoiceId);
+
+            await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
-        } 
-        catch (Exception ex) { msg = ex.Message; }
+        } catch (Exception ex) { msg = ex.Message; }
     }
 }

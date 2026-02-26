@@ -40,3 +40,5 @@ wwwroot/lib/
 ### --- SISTEMA OPERACIONAL ---
 Thumbs.db
 .DS_Store
+
+*.txt

@@ -27,14 +27,14 @@
     .ff-btn-action { width: 35px; height: 35px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s; }
 </style>
 
-@if (!session.IsLoggedIn) { 
-    <div class="container mt-5">
-        <div class="alert alert-danger shadow-sm border-0 d-flex align-items-center">
-            <i class="bi bi-shield-slash fs-2 me-3"></i>
-            <div>
-                <h4 class="mb-0">Acesso Negado</h4>
-                <p class="mb-0 small">Inicie sessão para gerir os utilizadores do sistema.</p>
-            </div>
+@if (!session.IsLoggedIn) 
+{
+    <div class="container mt-5 text-center">
+        <div class="alert alert-warning shadow-sm p-5 rounded-4">
+            <i class="bi bi-shield-lock display-4 d-block mb-3"></i>
+            <h4 class="fw-bold">Acesso Negado</h4>
+            <p>Inicie sessão para gerir a base de dados de clientes.</p>
+            <button class="btn btn-primary px-4" @onclick='() => Navigation.NavigateTo("/login")'>Ir para Login</button>
         </div>
     </div>
 }

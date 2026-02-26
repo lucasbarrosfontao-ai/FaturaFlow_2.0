@@ -104,14 +104,12 @@
 
 @if (!UserSession.IsLoggedIn)
 {
-    <div class="d-flex justify-content-center align-items-center vh-100 bg-light">
-        <div class="card p-5 shadow-lg border-0 text-center" style="border-radius: 20px; max-width: 400px;">
-            <i class="bi bi-shield-lock-fill text-primary mb-3" style="font-size: 4rem;"></i>
-            <h3 class="fw-bold">Acesso Restrito</h3>
-            <p class="text-muted">Inicie sessão para gerir a sua faturação com o FaturaFlow.</p>
-            <button class="btn btn-primary btn-lg w-100 fw-bold mt-3" @onclick='() => Navigation.NavigateTo("/login")'>
-                EFETUAR LOGIN
-            </button>
+    <div class="container mt-5 text-center">
+        <div class="alert alert-warning shadow-sm p-5 rounded-4">
+            <i class="bi bi-shield-lock display-4 d-block mb-3"></i>
+            <h4 class="fw-bold">Acesso Negado</h4>
+            <p>Inicie sessão para gerir a base de dados de clientes.</p>
+            <button class="btn btn-primary px-4" @onclick='() => Navigation.NavigateTo("/login")'>Ir para Login</button>
         </div>
     </div>
 }

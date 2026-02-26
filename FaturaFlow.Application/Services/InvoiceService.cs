@@ -1,69 +1,127 @@
 ﻿using FaturaFlow.Domain.Entities;
 using FaturaFlow.Domain.Interfaces;
 using FaturaFlow.Domain.ValueObjects;
-using System.Linq.Expressions;
 
 namespace FaturaFlow.Application.Services;
-
-using FaturaFlow.Domain.Entities;
-using FaturaFlow.Domain.Interfaces;
-using FaturaFlow.Domain.ValueObjects;
 
 public class InvoiceService
 {
     private readonly IInvoiceRepository _invoiceRepo;
     private readonly ICustomerRepository _customerRepo;
     private readonly IProductRepository _productRepo;
-    private readonly IMessageService _messageRepo;
+    private readonly IMessageService _messageService;
 
     public InvoiceService(
         IInvoiceRepository invoiceRepo,
         ICustomerRepository customerRepo,
         IProductRepository productRepo,
-        IMessageService messageRepo)
+        IMessageService messageService)
     {
         _invoiceRepo = invoiceRepo;
         _customerRepo = customerRepo;
         _productRepo = productRepo;
-        _messageRepo = messageRepo;
+        _messageService = messageService;
     }
 
     public async Task<IEnumerable<Invoice>> GetAllInvoicesAsync() => await _invoiceRepo.GetAllAsync();
 
-    public async Task<Guid> CreateInvoiceAsync(Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
+    public async Task<Invoice?> GetInvoiceByIdAsync(Guid id) => await _invoiceRepo.GetByIdAsync(id);
+
+    // CRIAÇÃO DE RASCUNHO (Não baixa estoque)
+    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
     {
-        // 1. Buscar Cliente
-        var customer = await _customerRepo.GetByIdAsync(customerId) 
+        var customer = await _customerRepo.GetByIdAsync(customerId)
             ?? throw new Exception("Cliente não encontrado.");
 
-        // 2. Criar a Raiz do Agregado (Invoice)
-        var invoice = new Invoice(customerId, invoiceNumber);
+        var invoice = new Invoice(customerId, invoiceNumber, Invoice.StatusDraft);
 
-        // 3. Processar Itens
         foreach (var item in items)
         {
-            var product = await _productRepo.GetByIdAsync(item.productId) 
+            var product = await _productRepo.GetByIdAsync(item.productId)
                 ?? throw new Exception($"Produto {item.productId} não encontrado.");
-
-            // Regra de Negócio: Adicionar linha (A Invoice calcula os totais internamente)
+            
             invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+        }
 
-            // Regra de Negócio: Baixar Stock
-            product.RemoveStock(item.quantity);
+        await _invoiceRepo.AddAsync(invoice);
+        return invoice.Id;
+    }
 
-            // Notificamos o repositório da mudança no produto
+    // ATUALIZAÇÃO DE RASCUNHO
+    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
+    {
+        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new Exception("Fatura não encontrada.");
+
+        // O próprio método da entidade já valida se é rascunho
+        invoice.UpdateDetails(customerId, invoiceNumber); 
+        invoice.ClearLines(); 
+        
+        foreach (var item in items)
+        {
+            var product = await _productRepo.GetByIdAsync(item.productId)
+                ?? throw new Exception($"Produto {item.productId} não encontrado.");
+            
+            invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+        }
+
+        await _invoiceRepo.UpdateAsync(invoice);
+    }
+
+    // EMISSÃO DEFINITIVA (Aqui baixa o estoque)
+    public async Task EmitInvoiceAsync(Guid invoiceId)
+    {
+        // 1. Carregar a fatura MAIS RECENTE da DB (acabou de ser salva no passo anterior)
+        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new Exception("Fatura não encontrada.");
+
+        if (invoice.Status != "Rascunho")
+            throw new Exception("Esta fatura já foi emitida.");
+
+        // 2. Baixar stock
+        foreach (var line in invoice.Lines) 
+        {
+            var product = await _productRepo.GetByIdAsync(line.ProductId)
+                ?? throw new Exception("Produto não encontrado.");
+            
+            product.RemoveStock(line.Quantity);
             await _productRepo.UpdateAsync(product);
         }
 
-        // 4. Persistir a Fatura (O EF salva as linhas automaticamente devido ao mapeamento)
-        await _invoiceRepo.AddAsync(invoice);
+        // 3. Mudar status
+        invoice.Issue(); 
+        
+        // 4. Salvar apenas o Status e a Data (O UpdateAsync agora lida com isso)
+        await _invoiceRepo.UpdateAsync(invoice);
 
-        // 5. Enviar Mensagem (RabbitMQ)
-        if (customer.Email?.Value != null)
+        // 5. Notificar (RabbitMQ)
+        var customer = await _customerRepo.GetByIdAsync(invoice.CustomerId);
+        if (customer?.Email?.Value != null)
         {
-            await _messageRepo.SendInvoiceMessageAsync(invoice.Id, customer.Name, customer.Email.Value);
+            await _messageService.SendInvoiceMessageAsync(invoice.Id, customer.Name, customer.Email.Value);
+        }
+    }
+
+    // Método para marcar como paga (Para o botão que vimos no componente Blazor)
+    public async Task MarkAsPaidAsync(Guid invoiceId)
+    {
+        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new Exception("Fatura não encontrada.");
+
+        invoice.MarkAsPaid();
+        await _invoiceRepo.UpdateAsync(invoice);
+    }
+    public async Task<Invoice> GetInvoiceForEditAsync(Guid invoiceId)
+    {
+        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new Exception("Fatura não encontrada.");
+
+        // Valida se o status é Rascunho usando a constante que definimos na entidade
+        if (invoice.Status != Invoice.StatusDraft)
+        {
+            throw new Exception("Somente faturas em rascunho podem ser editadas.");
         }
 
-        return invoice.Id;
+        return invoice;
     }
 }
