@@ -109,7 +109,6 @@ public class AuthService
             user.UpdatePassword(newHash);
         }
 
-        // AGORA FUNCIONA:
         user.UpdateDetails(newUsername, new EmailAddress(newEmail));
         
         await _userRepo.UpdateAsync(user);

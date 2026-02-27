@@ -3,5 +3,6 @@
   <Project Path="FaturaFlow.Domain/FaturaFlow.Domain.csproj" />
   <Project Path="FaturaFlow.Infrastructure/FaturaFlow.Infrastructure.csproj" />
   <Project Path="FaturaFlow.Presentation/FaturaFlow.Presentation.csproj" />
+  <Project Path="FaturaFlow.Tests/FaturaFlow.Tests.csproj" Id="56af1ee5-2c32-433b-b18b-ed997a5cc2ca" />
   <Project Path="FaturaFlow.Worker/FaturaFlow.Worker.csproj" Id="5cbe9682-0f60-439d-b917-842200a40070" />
 </Solution>
