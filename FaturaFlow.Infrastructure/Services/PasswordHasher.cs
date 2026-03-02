@@ -14,7 +14,6 @@ namespace FaturaFlow.Infrastructure.Services
         public bool VerifyPassword(string password, string hashedPassword)
         {
             bool isValid = BCrypt.Net.BCrypt.Verify(password, hashedPassword);
-            Console.WriteLine(HashPassword(password));
             Console.WriteLine($"Tentando entrar na Base de Dados...");
             if (isValid == true)
             {
@@ -22,7 +21,7 @@ namespace FaturaFlow.Infrastructure.Services
             }
             else 
             {
-                Console.WriteLine("Erro ao conectar com a base de dados, Tente admin/admin se for a primeira secção ou tente recuperar a senha");
+                Console.WriteLine("Erro ao conectar com a base de dados, Tente recuperar a senha");
             }
             return isValid;
         }

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using FaturaFlow.Domain.Entities;
 using FaturaFlow.Domain.Interfaces;
 using FaturaFlow.Domain.ValueObjects;
 using RabbitMQ.Client;
@@ -22,6 +23,7 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        Console.WriteLine("Worker iniciado, aguardando mensagens...");
         var factory = new ConnectionFactory() { 
             HostName = _configuration["RABBITMQ_HOST"] ?? "localhost",
             UserName = _configuration["RABBITMQ_USER"] ?? "guest",
@@ -36,6 +38,7 @@ public class Worker : BackgroundService
         var faturaConsumer = new AsyncEventingBasicConsumer(channel);
         faturaConsumer.ReceivedAsync += async (model, ea) =>
         {
+            Console.WriteLine("Mensagem recebida na fila de faturas, processando...");
             try {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
@@ -47,19 +50,20 @@ public class Worker : BackgroundService
                     var customerRepo = scope.ServiceProvider.GetRequiredService<ICustomerRepository>();
                     var pdfService = scope.ServiceProvider.GetRequiredService<IPdfService>();
                     var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+                    var company = scope.ServiceProvider.GetRequiredService<ICompanyRepository>();
 
                     var invoice = await invoiceRepo.GetByIdAsync(data!.Id_Fatura);
                     
-                    // Converte string para o Value Object esperado pelo Repository eddd
+                    // Converte string para o Value Object esperado pelo Repository
                     var emailVo = new EmailAddress(data.EmailCliente);
                     var customer = await customerRepo.GetByEmailAsync(emailVo); 
-
+                    
                     if (invoice != null && customer != null)
                     {
-                        var pdf = pdfService.GerarFaturaPdf(invoice, customer);
+                        var pdf = pdfService.GerarFaturaPdfAsync(invoice, customer);
                         
                         // Usa o .Value (ou a propriedade que retorna a string) para o envio do email
-                        await emailSender.SendInvoiceEmailAsync(emailVo.Value!, customer.Name, pdf, invoice.InvoiceNumber);
+                        await emailSender.SendInvoiceEmailAsync(emailVo.Value!, customer.Name, pdf.Result, invoice.InvoiceNumber);
                         
                         _logger.LogInformation("Fatura {num} processada e enviada para {email}.", invoice.InvoiceNumber, emailVo.Value);
                     }
@@ -83,6 +87,7 @@ public class Worker : BackgroundService
         var recConsumer = new AsyncEventingBasicConsumer(channel);
         recConsumer.ReceivedAsync += async (model, ea) =>
         {
+            Console.WriteLine("Mensagem recebida na fila de recuperacao de palavra-passe, processando...");
             try {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);

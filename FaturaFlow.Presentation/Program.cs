@@ -8,6 +8,7 @@ using FaturaFlow.Presentation.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
 using System.IO;
+using FaturaFlow.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,9 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+builder.Services.AddScoped<ICompanyRepository, CompanyRepository>(); // Sem interface, registro direto
+builder.Services.AddScoped<CompanyService>();
+ 
 
 // 3. Registrar Serviços de Infraestrutura
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>(); // BCrypt
@@ -37,6 +41,7 @@ builder.Services.AddScoped<SupplierService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<SalesService>();
+
 
 // 5. Registrar Estado da UI (Sessão)
 builder.Services.AddScoped<UserSession>();

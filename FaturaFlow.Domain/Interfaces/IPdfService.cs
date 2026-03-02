@@ -9,6 +9,6 @@ namespace FaturaFlow.Domain.Interfaces
 {
     public interface IPdfService
     {
-        byte[] GerarFaturaPdf(Invoice invoice, Customer customer);
+        Task<byte[]> GerarFaturaPdfAsync(Invoice invoice, Customer customer);
     }
 }

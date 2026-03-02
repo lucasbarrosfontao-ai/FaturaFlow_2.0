@@ -343,7 +343,7 @@ else
             }
 
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, items);
+            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate, items);
             
             await JSRuntime.InvokeVoidAsync("alert", "Rascunho atualizado com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
@@ -364,7 +364,7 @@ else
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
 
             // 1. Atualiza o rascunho para garantir que as últimas alterações na tela sejam salvas
-            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, items);
+            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate, items);
 
             // 2. Emite a fatura (o Service tratará da baixa de stock e envio de email)
             await InvoiceService.EmitInvoiceAsync(InvoiceId);

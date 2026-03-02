@@ -1,0 +1,308 @@
+@page "/Empresa"
+@using FaturaFlow.Application.Services
+@using FaturaFlow.Domain.Entities
+@using FaturaFlow.Presentation.Services
+
+@inject CompanyService CompanyService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject UserSession UserSession 
+
+<PageTitle>Dados da Empresa - FaturaFlow</PageTitle>
+
+<style>
+    :root {
+        --ff-dark-blue: #002d5b;
+        --ff-blue: #0056b3;
+        --ff-cyan: #00bcd4;
+        --ff-light: #f8fafc;
+    }
+
+    /* Layout Card Unico */
+    .ff-profile-card { border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; background: white; margin-bottom: 2rem; }
+    
+    .ff-profile-header { 
+        background: linear-gradient(135deg, var(--ff-dark-blue) 0%, #004e92 100%); 
+        color: white; 
+        padding: 2rem; 
+        position: relative;
+    }
+    
+    .ff-profile-header::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--ff-cyan);
+    }
+
+    /* Formulário e Inputs */
+    .ff-section-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--ff-blue);
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    .ff-section-label::after { content: ""; flex: 1; height: 1px; background: #e2e8f0; margin-left: 15px; }
+
+    .ff-input-group { position: relative; margin-bottom: 1rem; }
+    .ff-input-icon { position: absolute; left: 16px; top: 40px; color: var(--ff-blue); opacity: 0.6; z-index: 4; pointer-events: none;}
+    
+    .ff-form-control { 
+        padding-left: 45px !important; 
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border-radius: 8px; 
+        border: 1px solid #cbd5e1; 
+        background-color: #f8fafc;
+        transition: all 0.3s ease; 
+        font-weight: 500;
+        color: #334155;
+    }
+    .ff-form-control:focus { 
+        background-color: white;
+        border-color: var(--ff-cyan); 
+        box-shadow: 0 0 0 4px rgba(0, 188, 212, 0.1); 
+    }
+    .ff-label { font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block; }
+
+    .btn-save {
+        background-color: var(--ff-cyan);
+        color: var(--ff-dark-blue);
+        font-weight: 700;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+    .btn-save:hover { filter: brightness(0.95); transform: translateY(-1px); }
+</style>
+
+<div class="container py-4">
+    @if (!UserSession.IsLoggedIn)
+    {
+        <div class="container mt-5 text-center">
+        <div class="alert alert-warning shadow-sm p-5 rounded-4">
+            <i class="bi bi-shield-lock display-4 d-block mb-3"></i>
+            <h4 class="fw-bold">Acesso Negado</h4>
+            <p>Inicie sessão para gerir a base de dados de clientes.</p>
+            <button class="btn btn-primary px-4" @onclick='() => Navigation.NavigateTo("/login")'>Ir para Login</button>
+        </div>
+    </div>
+    }
+    else if (isLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="height: 60vh;">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <EditForm Model="@model" OnValidSubmit="HandleSave">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="ff-profile-card animate__animated animate__fadeIn">
+                        <!-- Cabeçalho -->
+                        <div class="ff-profile-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-white bg-opacity-10 p-3 rounded-3">
+                                    <i class="bi bi-building-gear fs-2"></i>
+                                </div>
+                                <div>
+                                    <h3 class="mb-1 fw-bold">Dados da Minha Empresa</h3>
+                                    <p class="mb-0 opacity-75 small">Estas informações aparecerão no cabeçalho das suas faturas.</p>
+                                </div>
+                            </div>
+                            <!-- Botão Salvar no Topo também -->
+                            <button type="submit" class="btn btn-light fw-bold shadow-sm d-none d-md-block">
+                                <i class="bi bi-check-lg me-2"></i>GUARDAR ALTERAÇÕES
+                            </button>
+                        </div>
+
+                        <!-- Corpo do Formulário -->
+                        <div class="p-4 p-md-5">
+                            
+                            <!-- 1. Identificação -->
+                            <div class="ff-section-label">
+                                <i class="bi bi-card-heading me-2"></i> Identificação Fiscal
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-8 ff-input-group">
+                                    <label class="ff-label">Nome Comercial / Razão Social</label>
+                                    <i class="bi bi-shop ff-input-icon"></i>
+                                    <InputText @bind-Value="model.Name" class="form-control ff-form-control" placeholder="Ex: A Minha Empresa Lda." />
+                                    <ValidationMessage For="@(() => model.Name)" class="text-danger small mt-1" />
+                                </div>
+                                <div class="col-md-4 ff-input-group">
+                                    <label class="ff-label">NIF / NIPC</label>
+                                    <i class="bi bi-upc-scan ff-input-icon"></i>
+                                    <InputText @bind-Value="model.NIF" class="form-control ff-form-control" placeholder="999999999" />
+                                    <ValidationMessage For="@(() => model.NIF)" class="text-danger small mt-1" />
+                                </div>
+                            </div>
+
+                            <!-- 2. Contactos -->
+                            <div class="ff-section-label">
+                                <i class="bi bi-chat-left-dots me-2"></i> Contactos Oficiais
+                            </div>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-6 ff-input-group">
+                                    <label class="ff-label">E-mail para Faturação</label>
+                                    <i class="bi bi-envelope-at ff-input-icon"></i>
+                                    <InputText @bind-Value="model.Email" class="form-control ff-form-control" placeholder="faturacao@empresa.com" />
+                                </div>
+                                <div class="col-md-6 ff-input-group">
+                                    <label class="ff-label">Telefone Geral</label>
+                                    <i class="bi bi-telephone ff-input-icon"></i>
+                                    <InputText @bind-Value="model.Phone" class="form-control ff-form-control" placeholder="+351 210 000 000" />
+                                </div>
+                            </div>
+
+                            <!-- 3. Localização -->
+                            <div class="ff-section-label">
+                                <i class="bi bi-geo-alt me-2"></i> Sede e Endereço
+                            </div>
+
+                            <div class="row g-4">
+                                <div class="col-12 ff-input-group">
+                                    <label class="ff-label">Morada Completa</label>
+                                    <i class="bi bi-signpost-2 ff-input-icon"></i>
+                                    <InputText @bind-Value="model.Address" class="form-control ff-form-control" placeholder="Rua Principal, Nº 10, 1º Esq." />
+                                </div>
+                                <div class="col-md-8 ff-input-group">
+                                    <label class="ff-label">Cidade / Localidade</label>
+                                    <i class="bi bi-buildings ff-input-icon"></i>
+                                    <InputText @bind-Value="model.City" class="form-control ff-form-control" />
+                                </div>
+                                <div class="col-md-4 ff-input-group">
+                                    <label class="ff-label">Código Postal</label>
+                                    <i class="bi bi-mailbox ff-input-icon"></i>
+                                    <InputText @bind-Value="model.ZipCode" class="form-control ff-form-control" placeholder="0000-000" />
+                                </div>
+                            </div>
+                            
+                            <!-- Rodapé com Erros e Botão Mobile -->
+                            @if (!string.IsNullOrEmpty(errorMessage)) 
+                            { 
+                                <div class="alert alert-danger mt-4 d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                                    <div>@errorMessage</div>
+                                </div> 
+                            }
+
+                            <div class="mt-4 pt-3 border-top d-md-none">
+                                <button type="submit" class="btn btn-save w-100 shadow">
+                                    GUARDAR ALTERAÇÕES
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // ID da empresa carregada (se existir)
+    private Guid? existingCompanyId = null;
+    
+    private CompanyFormModel model = new();
+    private bool isLoading = true;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync() 
+    {
+        if (!UserSession.IsLoggedIn) return;
+        
+        try 
+        {
+            // LÓGICA IMPORTANTE:
+            // Busca todas as empresas. Como é single-tenant, pegamos a primeira (FirstOrDefault).
+            // Se não existir nenhuma, o formulário fica vazio para criar a primeira.
+            var companies = await CompanyService.GetAllAsync();
+            var myCompany = companies.FirstOrDefault();
+
+            if (myCompany != null) 
+            {
+                existingCompanyId = myCompany.Id;
+                
+                // Preenche o formulário com os dados existentes
+                model = new CompanyFormModel {
+                    Name = myCompany.Name,
+                    NIF = myCompany.NIF?.Value ?? "",
+                    Phone = myCompany.Phone?.Value ?? "",
+                    Email = myCompany.Email?.Value ?? "",
+                    Address = myCompany.Address ?? "",
+                    City = myCompany.City ?? "",
+                    ZipCode = myCompany.ZipCode?.Value ?? ""
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Erro ao carregar dados: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSave() 
+    {
+        try {
+            errorMessage = "";
+            
+            // Se existingCompanyId for null, o serviço cria. Se tiver ID, o serviço atualiza.
+            await CompanyService.SaveCompanyAsync(
+                existingCompanyId, 
+                model.Name, 
+                model.NIF, 
+                model.Phone, 
+                model.Email, 
+                model.Address, 
+                model.City, 
+                model.ZipCode
+            );
+            
+            // Recarrega o ID caso tenha acabado de ser criada para futuros updates sem refresh
+            if (existingCompanyId == null)
+            {
+                var companies = await CompanyService.GetAllAsync();
+                existingCompanyId = companies.FirstOrDefault()?.Id;
+            }
+
+            await JSRuntime.InvokeVoidAsync("alert", "Dados da empresa atualizados com sucesso!");
+        } 
+        catch (Exception ex) { 
+            errorMessage = ex.Message; 
+        }
+    }
+
+    // Modelo simples para o formulário
+    public class CompanyFormModel {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "O nome é obrigatório.")]
+        public string Name { get; set; } = "";
+        
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "O NIF é obrigatório.")]
+        public string NIF { get; set; } = "";
+        
+        public string Phone { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string City { get; set; } = "";
+        public string ZipCode { get; set; } = "";
+    }
+}

@@ -14,6 +14,7 @@ namespace FaturaFlow.Infrastructure.Data
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceLine> InvoiceLines { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Company> Companies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -68,6 +69,17 @@ namespace FaturaFlow.Infrastructure.Data
                     .HasConversion(v => v == null ? null : v.Value, v => v == null ? null : new EmailAddress(v))
                     .HasColumnName("Email");
             });
+
+            // 6. Company
+            modelBuilder.Entity<Company>(entity =>
+            {
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.NIF).HasConversion(v => v == null ? null : v.Value, v => v == null ? null! : new PersonalId(v));
+                entity.Property(c => c.Phone).HasConversion(v => v == null ? null : v.Value, v => v == null ? null : new PhoneNumber(v));
+                entity.Property(c => c.Email).HasConversion(v => v == null ? null : v.Value, v => v == null ? null : new EmailAddress(v));
+                entity.Property(c => c.ZipCode).HasConversion(v => v == null ? null : v.Value, v => v == null ? null : new PostalCode(v));
+            });
+
 
             base.OnModelCreating(modelBuilder);
         }

@@ -27,6 +27,16 @@ namespace FaturaFlow.Domain.Entities
         private Invoice () {}
         #pragma warning restore CS8618
 
+        public Invoice(Guid customerId, string invoiceNumber,DateTime date, string status = StatusDraft)
+        {
+            Id = Guid.NewGuid();
+            CustomerId = customerId;
+            InvoiceNumber = invoiceNumber;
+            IssueDate = date;
+            Status = status;
+        }
+
+        // Compatibilidade: construtor sem data (usado nos testes e locais que não fornecem a data)
         public Invoice(Guid customerId, string invoiceNumber, string status = StatusDraft)
         {
             Id = Guid.NewGuid();
@@ -36,6 +46,17 @@ namespace FaturaFlow.Domain.Entities
             Status = status;
         }
 
+        public void UpdateDetails(Guid customerId, string invoiceNumber, DateTime date)
+        {
+            if (Status != StatusDraft)
+                throw new InvalidOperationException("Apenas rascunhos podem ser editados.");
+
+            CustomerId = customerId;
+            InvoiceNumber = invoiceNumber;
+            IssueDate = date;
+        }
+
+        // Overload sem data para compatibilidade
         public void UpdateDetails(Guid customerId, string invoiceNumber)
         {
             if (Status != StatusDraft)
@@ -44,7 +65,6 @@ namespace FaturaFlow.Domain.Entities
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
         }
-
         public void ClearLines()
         {
             if (Status != StatusDraft)

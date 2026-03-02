@@ -29,6 +29,7 @@
     
     .price-tag { font-weight: 700; color: var(--ff-dark-blue); }
     .profit-text { font-size: 0.75rem; color: #28a745; display: block; }
+    .loss-text { font-size: 0.75rem; color: #dc3545; display: block; }
 </style>
 
 @if (!UserSession.IsLoggedIn)
@@ -65,7 +66,7 @@ else
                         <th style="width: 30%">Produto</th>
                         <th>Referência</th>
                         <th>P. Custo</th>
-                        <th>P. Venda (c/ IVA)</th>
+                        <th>P. Venda (S / IVA)</th>
                         <th class="text-center">Stock</th>
                         <th class="text-center">Unidade</th>
                         <th class="text-center">Ações</th>
@@ -95,7 +96,7 @@ else
                                     }
                                     else if (product.SalePrice.Value < product.PurchasePrice.Value)
                                     {
-                                        <span class="profit-text"><i class ="bi bi-graph-down me-1"></i>Margem Negativa</span>
+                                        <span class="loss-text"><i class ="bi bi-graph-down me-1"></i>Margem Negativa</span>
                                     }
                                 </td>
                                 <td class="ff-td text-center">

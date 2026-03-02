@@ -72,6 +72,12 @@
         @if (session.IsLoggedIn)
         {
             <div class="nav-item px-2">
+                <NavLink class="nav-link" href="Empresa">
+                    <i class="bi bi-building-gear me-2"></i> Minha Empresa
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-2">
                 <NavLink class="nav-link" href="Utilizadores/Ver">
                     <i class="bi bi-shield-lock-fill me-2"></i> Utilizadores
                 </NavLink>
@@ -87,7 +93,7 @@
         <!-- BOTÃO SAIR -->
         @if (session.IsLoggedIn)
         {
-            <div class="nav-item px-2">
+            <div class="nav-item px-2 mt-4">
                 <button class="nav-link btn btn-link w-100 text-start border-0 ff-logout-btn" @onclick="Logout">
                     <i class="bi bi-power me-2"></i> Terminar Sessão
                 </button>

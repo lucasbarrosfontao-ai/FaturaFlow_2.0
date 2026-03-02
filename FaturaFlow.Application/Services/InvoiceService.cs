@@ -28,12 +28,12 @@ public class InvoiceService
     public async Task<Invoice?> GetInvoiceByIdAsync(Guid id) => await _invoiceRepo.GetByIdAsync(id);
 
     // CRIAÇÃO DE RASCUNHO (Não baixa estoque)
-    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
+    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
         var customer = await _customerRepo.GetByIdAsync(customerId)
             ?? throw new Exception("Cliente não encontrado.");
 
-        var invoice = new Invoice(customerId, invoiceNumber, Invoice.StatusDraft);
+        var invoice = new Invoice(customerId, invoiceNumber, invoiceDate, Invoice.StatusDraft);
 
         foreach (var item in items)
         {
@@ -47,14 +47,18 @@ public class InvoiceService
         return invoice.Id;
     }
 
+    // Overload de compatibilidade (sem data) usado nos testes
+    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
+        => await CreateDraftInvoiceAsync(customerId, invoiceNumber, DateTime.Now, items);
+
     // ATUALIZAÇÃO DE RASCUNHO
-    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
+    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
             ?? throw new Exception("Fatura não encontrada.");
 
         // O próprio método da entidade já valida se é rascunho
-        invoice.UpdateDetails(customerId, invoiceNumber); 
+        invoice.UpdateDetails(customerId, invoiceNumber, invoiceDate); 
         invoice.ClearLines(); 
         
         foreach (var item in items)
@@ -67,6 +71,10 @@ public class InvoiceService
 
         await _invoiceRepo.UpdateAsync(invoice);
     }
+
+    // Overload de compatibilidade (sem data)
+    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
+        => await UpdateDraftInvoiceAsync(invoiceId, customerId, invoiceNumber, DateTime.Now, items);
 
     // EMISSÃO DEFINITIVA (Aqui baixa o estoque)
     public async Task EmitInvoiceAsync(Guid invoiceId)

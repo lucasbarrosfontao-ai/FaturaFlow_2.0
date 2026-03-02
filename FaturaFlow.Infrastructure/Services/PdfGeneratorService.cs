@@ -10,11 +10,26 @@ namespace FaturaFlow.Infrastructure.Services;
 public class PdfGeneratorService : IPdfService
 {
     private readonly CultureInfo _culture = new CultureInfo("pt-PT");
+    // 1. Adicionamos o repositório aqui
+    private readonly ICompanyRepository _companyRepository;
 
     static PdfGeneratorService() => QuestPDF.Settings.License = LicenseType.Community;
 
-    public byte[] GerarFaturaPdf(Invoice invoice, Customer customer)
+    // 2. O construtor recebe o repositório via Injeção de Dependência
+    public PdfGeneratorService(ICompanyRepository companyRepository)
     {
+        _companyRepository = companyRepository;
+    }
+    
+    // 3. O método agora é async Task<byte[]> para poder dar "await" no banco
+    public async Task<byte[]> GerarFaturaPdfAsync(Invoice invoice, Customer customer)
+    {
+        // 4. Buscamos a empresa pelo ID fixo diretamente aqui dentro
+        var companyId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var company = await _companyRepository.GetByIdAsync(companyId);
+
+        // O resto do código do PDF permanece igual, 
+        // mas agora ele usa a variável 'company' que acabou de ser buscada
         return Document.Create(container =>
         {
             container.Page(page =>
@@ -28,10 +43,24 @@ public class PdfGeneratorService : IPdfService
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        col.Item().Text("FaturaFlow").FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
-                        col.Item().Text("O fluxo inteligente da sua gestão").FontSize(9).Italic().FontColor(Colors.Grey.Medium);
-                        col.Item().PaddingTop(5).Text("NIF: XXXXXXXXXXX");
-                        col.Item().Text("Localidade: XXXXXXXXX XXXXXXX XXXXXXXXX");
+                        // Verificamos se o objeto 'company' que veio por parâmetro existe
+                        if (company != null) 
+                        {
+                            col.Item().Text(company.Name).FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
+                            col.Item().Text($"NIF: {company.NIF?.Value ?? "N/A"}").FontSize(16);
+                            
+                            var endereco = $"{company.Address}, {company.City}";
+                            if (!string.IsNullOrEmpty(company.ZipCode?.Value))
+                                endereco += $" ({company.ZipCode.Value})";
+                                
+                            col.Item().Text(endereco).FontSize(12).FontColor(Colors.Grey.Darken2);
+                        }
+                        else
+                        {
+                            // Fallback caso a empresa não seja encontrada no banco
+                            col.Item().Text("FaturaFlow").FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
+                            col.Item().Text("O fluxo inteligente da sua gestão").FontSize(9).Italic().FontColor(Colors.Grey.Medium);
+                        }
                     });
 
                     row.RelativeItem().AlignRight().Column(col =>
@@ -53,14 +82,13 @@ public class PdfGeneratorService : IPdfService
                         {
                             c.Item().Text("DADOS DO CLIENTE").FontSize(8).SemiBold().FontColor(Colors.Grey.Darken2);
                             c.Item().Text(customer.Name).FontSize(11).SemiBold();
-                            c.Item().Text($"NIF: {customer.NIF.Value}");
+                            c.Item().Text($"NIF: {customer.NIF?.Value ?? "Consumidor Final"}");
                             
-                            // Endereço (usando os novos campos do seu DDD)
-                            var endereco = $"{customer.Address}, {customer.City}";
+                            var enderecoCli = $"{customer.Address} {customer.City}";
                             if (!string.IsNullOrEmpty(customer.ZipCode?.Value))
-                                endereco += $" ({customer.ZipCode.Value})";
+                                enderecoCli += $" ({customer.ZipCode.Value})";
                                 
-                            c.Item().Text(endereco);
+                            c.Item().Text(enderecoCli);
                         });
                     });
 
@@ -71,17 +99,16 @@ public class PdfGeneratorService : IPdfService
                     {
                         table.ColumnsDefinition(columns =>
                         {
-                            columns.RelativeColumn(3); // Produto/Descrição
-                            columns.RelativeColumn();  // Quantidade
-                            columns.RelativeColumn();  // Preço Unit.
-                            columns.RelativeColumn();  // IVA %
-                            columns.RelativeColumn();  // Total
+                            columns.RelativeColumn(3); 
+                            columns.RelativeColumn();  
+                            columns.RelativeColumn();  
+                            columns.RelativeColumn();  
+                            columns.RelativeColumn();  
                         });
 
-                        // Cabeçalho da Tabela
                         table.Header(header =>
                         {
-                            header.Cell().Element(HeaderStyle).Text("Produto / ID");
+                            header.Cell().Element(HeaderStyle).Text("Produto / Descrição");
                             header.Cell().Element(HeaderStyle).AlignRight().Text("Qtd");
                             header.Cell().Element(HeaderStyle).AlignRight().Text("Preço Unit.");
                             header.Cell().Element(HeaderStyle).AlignRight().Text("IVA");
@@ -91,10 +118,9 @@ public class PdfGeneratorService : IPdfService
                                 container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
                         });
 
-                        // Linhas da Tabela
                         foreach (var linha in invoice.Lines)
                         {
-                            table.Cell().Element(RowStyle).Text($"Produto ID: {linha.ProductId}");
+                            table.Cell().Element(RowStyle).Text(linha.ProductId.ToString());
                             table.Cell().Element(RowStyle).AlignRight().Text(linha.Quantity.ToString());
                             table.Cell().Element(RowStyle).AlignRight().Text(linha.UnitPrice.Value.ToString("C", _culture));
                             table.Cell().Element(RowStyle).AlignRight().Text($"{linha.VatRate.Value}%");
@@ -130,7 +156,9 @@ public class PdfGeneratorService : IPdfService
                     c.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     c.Item().PaddingTop(5).Text(x =>
                     {
-                        x.Span("Fatura gerada automaticamente por FaturaFlow | Página ");
+                        x.Span("Fatura gerada por ");
+                        x.Span(company?.Name ?? "FaturaFlow").SemiBold();
+                        x.Span(" | Página ");
                         x.CurrentPageNumber();
                         x.Span(" de ");
                         x.TotalPages();
