@@ -217,8 +217,8 @@ else
 
 @code {
     private Guid selectedCustomerId = Guid.Empty;
-    private string invoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmm}";
-    private DateTime invoiceDate = DateTime.Now;
+    private string invoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmmssfff}";
+    private DateTime invoiceDate = DateTime.Today;
 
     private List<Customer> customers = new();
     private List<Product> products = new();

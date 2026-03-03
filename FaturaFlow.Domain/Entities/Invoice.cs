@@ -37,12 +37,13 @@ namespace FaturaFlow.Domain.Entities
         }
 
         // Compatibilidade: construtor sem data (usado nos testes e locais que não fornecem a data)
-        public Invoice(Guid customerId, string invoiceNumber, string status = StatusDraft)
+        public void InvoiceTest(Guid customerId, string invoiceNumber, DateTime issueDate, string status = StatusDraft)
         {
+            issueDate = issueDate == default ? DateTime.Now : issueDate; // Se data for default, usar Now
             Id = Guid.NewGuid();
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
-            IssueDate = DateTime.Now;
+            IssueDate = issueDate; // Data fornecida para testes
             Status = status;
         }
 
@@ -50,14 +51,15 @@ namespace FaturaFlow.Domain.Entities
         {
             if (Status != StatusDraft)
                 throw new InvalidOperationException("Apenas rascunhos podem ser editados.");
-
+            if (date > DateTime.Now)
+                throw new InvalidOperationException("A data da fatura não pode ser Futura.");
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
             IssueDate = date;
         }
 
         // Overload sem data para compatibilidade
-        public void UpdateDetails(Guid customerId, string invoiceNumber)
+        public void UpdateDetailsTest(Guid customerId, string invoiceNumber)
         {
             if (Status != StatusDraft)
                 throw new InvalidOperationException("Apenas rascunhos podem ser editados.");
@@ -84,7 +86,7 @@ namespace FaturaFlow.Domain.Entities
             RecalculateTotals();
         }
 
-        public void Issue()
+        public void Issue(DateTime? finalDate = null)
         {
             if (Status != StatusDraft)
                 throw new InvalidOperationException("A fatura já foi emitida ou cancelada.");
@@ -93,7 +95,12 @@ namespace FaturaFlow.Domain.Entities
                 throw new InvalidOperationException("Não é possível emitir uma fatura sem itens.");
 
             Status = StatusIssued;
-            IssueDate = DateTime.Now; // Data oficial de emissão
+            if (finalDate.HasValue ) 
+            {
+                if (finalDate > DateTime.Now)
+                    throw new InvalidOperationException("A data de emissão não pode ser Futura.");
+                IssueDate = finalDate.Value;
+            }
         }
 
         public void MarkAsPaid()

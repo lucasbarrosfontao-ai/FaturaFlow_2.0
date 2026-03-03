@@ -27,14 +27,14 @@ public class InvoiceService
 
     public async Task<Invoice?> GetInvoiceByIdAsync(Guid id) => await _invoiceRepo.GetByIdAsync(id);
 
-    // CRIAÇÃO DE RASCUNHO (Não baixa estoque)
     public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
         var customer = await _customerRepo.GetByIdAsync(customerId)
             ?? throw new Exception("Cliente não encontrado.");
 
         var invoice = new Invoice(customerId, invoiceNumber, invoiceDate, Invoice.StatusDraft);
-
+        if (invoiceDate > DateTime.Now)
+            throw new Exception("A data da fatura não pode ser Futura.");
         foreach (var item in items)
         {
             var product = await _productRepo.GetByIdAsync(item.productId)
@@ -46,12 +46,9 @@ public class InvoiceService
         await _invoiceRepo.AddAsync(invoice);
         return invoice.Id;
     }
+    public async Task<Guid> CreateDraftInvoiceAsyncTest(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
+        => await CreateDraftInvoiceAsync(customerId, invoiceNumber, invoiceDate, items);
 
-    // Overload de compatibilidade (sem data) usado nos testes
-    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
-        => await CreateDraftInvoiceAsync(customerId, invoiceNumber, DateTime.Now, items);
-
-    // ATUALIZAÇÃO DE RASCUNHO
     public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
@@ -60,7 +57,8 @@ public class InvoiceService
         // O próprio método da entidade já valida se é rascunho
         invoice.UpdateDetails(customerId, invoiceNumber, invoiceDate); 
         invoice.ClearLines(); 
-        
+        if (invoiceDate > DateTime.Now)
+            throw new Exception("A data da fatura não pode ser Futura.");
         foreach (var item in items)
         {
             var product = await _productRepo.GetByIdAsync(item.productId)
@@ -72,21 +70,18 @@ public class InvoiceService
         await _invoiceRepo.UpdateAsync(invoice);
     }
 
-    // Overload de compatibilidade (sem data)
-    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, List<(Guid productId, int quantity)> items)
-        => await UpdateDraftInvoiceAsync(invoiceId, customerId, invoiceNumber, DateTime.Now, items);
+    public async Task UpdateDraftInvoiceAsyncTest(Guid invoiceId, Guid customerId, string invoiceNumber,DateTime invoiceDate, List<(Guid productId, int quantity)> items)
+        => await UpdateDraftInvoiceAsync(invoiceId, customerId, invoiceNumber, invoiceDate, items);
 
-    // EMISSÃO DEFINITIVA (Aqui baixa o estoque)
     public async Task EmitInvoiceAsync(Guid invoiceId)
     {
-        // 1. Carregar a fatura MAIS RECENTE da DB (acabou de ser salva no passo anterior)
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
             ?? throw new Exception("Fatura não encontrada.");
 
         if (invoice.Status != "Rascunho")
             throw new Exception("Esta fatura já foi emitida.");
-
-        // 2. Baixar stock
+        if (invoice.IssueDate > DateTime.Now)
+            throw new Exception("A data da fatura não pode ser Futura.");
         foreach (var line in invoice.Lines) 
         {
             var product = await _productRepo.GetByIdAsync(line.ProductId)
@@ -96,13 +91,10 @@ public class InvoiceService
             await _productRepo.UpdateAsync(product);
         }
 
-        // 3. Mudar status
         invoice.Issue(); 
         
-        // 4. Salvar apenas o Status e a Data (O UpdateAsync agora lida com isso)
         await _invoiceRepo.UpdateAsync(invoice);
 
-        // 5. Notificar (RabbitMQ)
         var customer = await _customerRepo.GetByIdAsync(invoice.CustomerId);
         if (customer?.Email?.Value != null)
         {
