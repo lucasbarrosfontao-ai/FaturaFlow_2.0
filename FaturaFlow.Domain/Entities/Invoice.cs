@@ -27,8 +27,14 @@ namespace FaturaFlow.Domain.Entities
         private Invoice () {}
         #pragma warning restore CS8618
 
+        private void ValidateNotFutureDate(DateTime date)
+            {
+                if (date > DateTime.Now)
+                    throw new InvalidOperationException("A data da fatura não pode ser Futura.");
+            }
         public Invoice(Guid customerId, string invoiceNumber,DateTime date, string status = StatusDraft)
         {
+            ValidateNotFutureDate(date);
             Id = Guid.NewGuid();
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
@@ -37,22 +43,20 @@ namespace FaturaFlow.Domain.Entities
         }
 
         // Compatibilidade: construtor sem data (usado nos testes e locais que não fornecem a data)
-        public void InvoiceTest(Guid customerId, string invoiceNumber, DateTime issueDate, string status = StatusDraft)
+        public Invoice(Guid customerId, string invoiceNumber, string status = StatusDraft)
         {
-            issueDate = issueDate == default ? DateTime.Now : issueDate; // Se data for default, usar Now
             Id = Guid.NewGuid();
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
-            IssueDate = issueDate; // Data fornecida para testes
+            IssueDate = DateTime.Now; // Data fornecida para testes
             Status = status;
         }
-
+        
         public void UpdateDetails(Guid customerId, string invoiceNumber, DateTime date)
         {
+            ValidateNotFutureDate(date);
             if (Status != StatusDraft)
                 throw new InvalidOperationException("Apenas rascunhos podem ser editados.");
-            if (date > DateTime.Now)
-                throw new InvalidOperationException("A data da fatura não pode ser Futura.");
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
             IssueDate = date;
@@ -97,8 +101,7 @@ namespace FaturaFlow.Domain.Entities
             Status = StatusIssued;
             if (finalDate.HasValue ) 
             {
-                if (finalDate > DateTime.Now)
-                    throw new InvalidOperationException("A data de emissão não pode ser Futura.");
+                ValidateNotFutureDate(finalDate.Value); // Reutiliza a validação aqui
                 IssueDate = finalDate.Value;
             }
         }

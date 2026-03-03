@@ -54,7 +54,7 @@ namespace FaturaFlow.Tests.Application
             var items = new List<(Guid, int)> { (productId, 2) };
 
             // --- ACT ---
-            var resultId = await _service.CreateDraftInvoiceAsync(customerId, "FAT-001", items);
+            var resultId = await _service.CreateDraftInvoiceAsync(customerId, "FAT-001",DateTime.Now, items); //O erro está aqui
 
             // --- ASSERT ---
             resultId.Should().NotBeEmpty();

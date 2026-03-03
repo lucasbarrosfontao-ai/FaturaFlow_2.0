@@ -8,6 +8,7 @@ using FaturaFlow.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FaturaFlow.Tests.Domain.Entities;
 
 namespace FaturaFlow.Tests.Application
 {
