@@ -116,6 +116,8 @@ else
                                     <td class="ff-td">
                                         <span class="small text-secondary"><i class="bi bi-geo-alt me-1"></i>@client.City</span>
                                     </td>
+                                    @if (client.NIF.Value.ToString() != "999999990") // NIF do Cliente Final, que não pode ser editado nem eliminado
+                                    {
                                     <td class="ff-td text-center">
                                         <button class="btn btn-outline-primary ff-btn-action me-1" title="Editar" @onclick="() => EditClient(client.Id)">
                                             <i class="bi bi-pencil-square"></i>
@@ -124,6 +126,8 @@ else
                                             <i class="bi bi-trash3-fill"></i>
                                         </button>
                                     </td>
+                                    }
+                                    
                                 </tr>
                             }
                         }

@@ -14,14 +14,14 @@ namespace FaturaFlow.Infrastructure.Services
         public bool VerifyPassword(string password, string hashedPassword)
         {
             bool isValid = BCrypt.Net.BCrypt.Verify(password, hashedPassword);
-            Console.WriteLine($"Tentando entrar na Base de Dados...");
+            Console.WriteLine($"Tentando verificar a senha...");
             if (isValid == true)
             {
-                Console.WriteLine("Conectado");
+                Console.WriteLine("Senha verificada com sucesso.");
             }
             else 
             {
-                Console.WriteLine("Erro ao conectar com a base de dados, Tente recuperar a senha");
+                Console.WriteLine("Erro ao verificar a senha. Tente recuperar a senha");
             }
             return isValid;
         }

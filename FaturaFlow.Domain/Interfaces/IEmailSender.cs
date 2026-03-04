@@ -8,7 +8,7 @@ namespace FaturaFlow.Domain.Interfaces
 {
     public interface IEmailSender
     {
-        Task SendInvoiceEmailAsync(string email, string nome, byte[] pdf, string numeroFatura);
+        Task SendInvoiceEmailAsync(string email, string nome, byte[] pdf, string numeroFatura, string tipo);
         Task SendCodePassEmailAsync(string email, string codigo);
     }
 }

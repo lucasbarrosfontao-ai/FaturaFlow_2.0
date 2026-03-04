@@ -3,11 +3,13 @@
 @using FaturaFlow.Application.Services
 @using FaturaFlow.Domain.Entities
 @using FaturaFlow.Presentation.Services
+@using FaturaFlow.Domain.Interfaces;
 
 @inject InvoiceService InvoiceService
 @inject CustomerService CustomerService
 @inject NavigationManager Navigation
 @inject UserSession UserSession
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Consultar Faturas - FaturaFlow</PageTitle>
 
@@ -148,7 +150,7 @@ else
                                         <i class="bi bi-cash-stack me-2"></i>MARCAR COMO PAGA
                                     </button>    
                                 }
-                                <button class="btn btn-outline-light btn-sm"><i class="bi bi-printer me-2"></i>IMPRIMIR PDF</button>
+                                <button class="btn btn-outline-light btn-sm" @onclick="EnviarEmail"><i class="bi bi-envelope me-2"></i>Enviar por Email</button>
                             </div>
                         </div>
                     </div>
@@ -162,24 +164,41 @@ else
     private List<Invoice>? invoices;
     private List<Customer> customers = new();
     private Invoice? selectedInvoice;
+    private Customer selectedCustomer => customers.FirstOrDefault(c => c.Id == selectedInvoice?.CustomerId)!;
+    
 
-    protected override async Task OnInitializedAsync() {
+    protected override async Task OnInitializedAsync() 
+    {
         if (!UserSession.IsLoggedIn) return;
         invoices = (await InvoiceService.GetAllInvoicesAsync()).OrderByDescending(i => i.IssueDate).ToList();
         customers = (await CustomerService.GetAllActiveAsync()).ToList();
     }
 
-    private string GetStatusClass(string status) => status switch {
+    private string GetStatusClass(string status) => status switch 
+    {
         "Rascunho" => "bg-rascunho",
         "Emitida" => "bg-emitida",
         "Paga" => "bg-paga",
         _ => "bg-secondary text-white"
     };
 
-    private async Task LiquidarFatura() {
+    private async Task LiquidarFatura() 
+    {
         if (selectedInvoice == null) return;
         await InvoiceService.MarkAsPaidAsync(selectedInvoice.Id);
         invoices = (await InvoiceService.GetAllInvoicesAsync()).ToList();
         selectedInvoice = invoices.FirstOrDefault(i => i.Id == selectedInvoice.Id);
+    }
+    private async Task EnviarEmail() 
+    {
+        if (selectedInvoice == null) return;
+        if (selectedCustomer == null || string.IsNullOrEmpty(selectedCustomer.Email?.Value)) 
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "O cliente associado a esta fatura não tem um email válido.");
+            return;
+        }
+        await InvoiceService.SendEmailAsync(selectedInvoice.Id);
+        
+        await JSRuntime.InvokeVoidAsync("alert", "Email enviado com sucesso!");
     }
 }

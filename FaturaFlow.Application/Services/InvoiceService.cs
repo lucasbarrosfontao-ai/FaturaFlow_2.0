@@ -1,4 +1,6 @@
-﻿using FaturaFlow.Domain.Entities;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
+using FaturaFlow.Domain.Entities;
 using FaturaFlow.Domain.Interfaces;
 using FaturaFlow.Domain.ValueObjects;
 
@@ -123,5 +125,23 @@ public class InvoiceService
         }
 
         return invoice;
+    }
+    public async Task SendEmailAsync(Guid invoiceId)
+    {
+        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new Exception("Fatura não encontrada.");
+
+        if (invoice.Status == Invoice.StatusDraft)
+        {
+            throw new Exception("Não é possível enviar um rascunho por email. Por favor, emita a fatura primeiro.");
+        }
+
+        var customer = await _customerRepo.GetByIdAsync(invoice.CustomerId);
+        if (customer?.Email?.Value == null)
+        {
+            throw new Exception("O cliente associado a esta fatura não tem um email válido. Por favor, atualize os dados do cliente antes de enviar.");
+        }
+
+        await _messageService.SendInvoiceMessageAsync(invoice.Id, customer.Name, customer.Email.Value);
     }
 }

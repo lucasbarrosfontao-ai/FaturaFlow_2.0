@@ -10,26 +10,35 @@ namespace FaturaFlow.Infrastructure.Services;
 public class PdfGeneratorService : IPdfService
 {
     private readonly CultureInfo _culture = new CultureInfo("pt-PT");
-    // 1. Adicionamos o repositório aqui
+
     private readonly ICompanyRepository _companyRepository;
+    private readonly IProductRepository _productRepository;
 
     static PdfGeneratorService() => QuestPDF.Settings.License = LicenseType.Community;
 
-    // 2. O construtor recebe o repositório via Injeção de Dependência
-    public PdfGeneratorService(ICompanyRepository companyRepository)
+    // Construtor com a injeção do repositório de produtos
+    public PdfGeneratorService(ICompanyRepository companyRepository, IProductRepository productRepository)
     {
         _companyRepository = companyRepository;
+        _productRepository = productRepository; 
     }
-    
-    // 3. O método agora é async Task<byte[]> para poder dar "await" no banco
+
     public async Task<byte[]> GerarFaturaPdfAsync(Invoice invoice, Customer customer)
     {
-        // 4. Buscamos a empresa pelo ID fixo diretamente aqui dentro
         var companyId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var company = await _companyRepository.GetByIdAsync(companyId);
+        
+        // 1. Buscamos todos os nomes dos produtos antes de desenhar o PDF
+        var nomesProdutos = new Dictionary<Guid, string>();
+        foreach (var linha in invoice.Lines)
+        {
+            if (!nomesProdutos.ContainsKey(linha.ProductId))
+            {
+                var produto = await _productRepository.GetByIdAsync(linha.ProductId);
+                nomesProdutos[linha.ProductId] = produto?.Name ?? "Produto não encontrado";
+            }
+        }
 
-        // O resto do código do PDF permanece igual, 
-        // mas agora ele usa a variável 'company' que acabou de ser buscada
         return Document.Create(container =>
         {
             container.Page(page =>
@@ -43,7 +52,6 @@ public class PdfGeneratorService : IPdfService
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        // Verificamos se o objeto 'company' que veio por parâmetro existe
                         if (company != null) 
                         {
                             col.Item().Text(company.Name).FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
@@ -57,7 +65,6 @@ public class PdfGeneratorService : IPdfService
                         }
                         else
                         {
-                            // Fallback caso a empresa não seja encontrada no banco
                             col.Item().Text("FaturaFlow").FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
                             col.Item().Text("O fluxo inteligente da sua gestão").FontSize(9).Italic().FontColor(Colors.Grey.Medium);
                         }
@@ -120,7 +127,12 @@ public class PdfGeneratorService : IPdfService
 
                         foreach (var linha in invoice.Lines)
                         {
-                            table.Cell().Element(RowStyle).Text(linha.ProductId.ToString());
+                            // 2. AQUI ESTÁ A MUDANÇA: Pegamos o nome do dicionário em vez de usar o ID
+                            string nomeDoProduto = nomesProdutos.ContainsKey(linha.ProductId) 
+                                                   ? nomesProdutos[linha.ProductId] 
+                                                   : linha.ProductId.ToString();
+
+                            table.Cell().Element(RowStyle).Text(nomeDoProduto);
                             table.Cell().Element(RowStyle).AlignRight().Text(linha.Quantity.ToString());
                             table.Cell().Element(RowStyle).AlignRight().Text(linha.UnitPrice.Value.ToString("C", _culture));
                             table.Cell().Element(RowStyle).AlignRight().Text($"{linha.VatRate.Value}%");
@@ -162,6 +174,122 @@ public class PdfGeneratorService : IPdfService
                         x.CurrentPageNumber();
                         x.Span(" de ");
                         x.TotalPages();
+                    });
+                });
+            });
+        }).GeneratePdf();
+    }
+
+    public async Task<byte[]> GerarReciboPdfAsync(Invoice invoice, Customer customer)
+    {
+        var companyId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var company = await _companyRepository.GetByIdAsync(companyId);
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(1, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Verdana));
+
+                // --- CABEÇALHO (Verde para indicar Recibo/Pago) ---
+                page.Header().Row(row =>
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text(company?.Name ?? "FaturaFlow").FontSize(24).SemiBold().FontColor(Colors.Green.Medium);
+                        col.Item().Text($"NIF: {company?.NIF?.Value ?? "N/A"}").FontSize(14);
+                        col.Item().Text($"{company?.Address}, {company?.City}").FontSize(10).FontColor(Colors.Grey.Medium);
+                    });
+
+                    row.RelativeItem().AlignRight().Column(col =>
+                    {
+                        col.Item().Text("RECIBO").FontSize(24).ExtraBold().FontColor(Colors.Green.Medium);
+                        col.Item().Text($"Nº: RC-{invoice.InvoiceNumber}").FontSize(12).SemiBold();
+                        col.Item().Text($"Data de Emissão: {DateTime.Now.ToString("dd/MM/yyyy", _culture)}");
+                    });
+                });
+
+                // --- CONTEÚDO ---
+                page.Content().PaddingVertical(20).Column(col =>
+                {
+                    // Banner de Confirmação de Pagamento
+                    col.Item().Background(Colors.Green.Lighten5).Padding(10).Row(row =>
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("CONFIRMAÇÃO DE RECEBIMENTO").FontSize(8).SemiBold().FontColor(Colors.Green.Darken3);
+                            c.Item().PaddingTop(5).Text(t =>
+                            {
+                                t.Span("Confirmamos que recebemos de ");
+                                t.Span(customer.Name).SemiBold();
+                                t.Span(" a quantia total de ");
+                                t.Span(invoice.TotalPayable.ToString("C", _culture)).SemiBold().FontColor(Colors.Green.Medium);
+                                t.Span(" para liquidação do documento abaixo referido.");
+                            });
+                        });
+                    });
+
+                    col.Item().PaddingVertical(15);
+
+                    // Tabela com a Referência da Fatura
+                    col.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3); // Descrição do documento
+                            columns.RelativeColumn();  // Data do documento
+                            columns.RelativeColumn();  // Valor Original
+                            columns.RelativeColumn();  // Valor Pago
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderStyle).Text("Documento de Origem");
+                            header.Cell().Element(HeaderStyle).Text("Data Fatura");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("Valor Inc.");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("Valor Pago");
+
+                            static IContainer HeaderStyle(IContainer container) => 
+                                container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
+                        });
+
+                        // Linha única referenciando a fatura
+                        table.Cell().Element(RowStyle).Text($"Fatura nº {invoice.InvoiceNumber}");
+                        table.Cell().Element(RowStyle).Text(invoice.IssueDate.ToString("dd/MM/yyyy", _culture));
+                        table.Cell().Element(RowStyle).AlignRight().Text(invoice.TotalPayable.ToString("C", _culture));
+                        table.Cell().Element(RowStyle).AlignRight().Text(invoice.TotalPayable.ToString("C", _culture));
+
+                        static IContainer RowStyle(IContainer container) => 
+                            container.PaddingVertical(10).BorderBottom(1).BorderColor(Colors.Grey.Lighten3);
+                    });
+
+                    col.Item().PaddingVertical(20);
+
+                    // Espaço para Notas ou Meio de Pagamento
+                    col.Item().Row(row => 
+                    {
+                        row.RelativeItem().Column(c => {
+                            c.Item().Text("OBSERVAÇÕES").FontSize(8).SemiBold();
+                            c.Item().Text("Este recibo serve como prova de pagamento integral da fatura mencionada.").FontSize(9).Italic();
+                            c.Item().PaddingTop(10).Text("Meio de Pagamento: Transferência Bancária / Numerário").FontSize(9);
+                        });
+
+                        row.ConstantItem(150).Column(c => {
+                            c.Item().PaddingTop(10).BorderTop(0.5f).AlignCenter().Text("Assinatura / Carimbo").FontSize(8);
+                        });
+                    });
+                });
+              
+                // --- RODAPÉ ---
+                page.Footer().AlignCenter().Column(c => {
+                    c.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    c.Item().PaddingTop(5).Text(x =>
+                    {
+                        x.Span("Documento gerado por ");
+                        x.Span(company?.Name ?? "FaturaFlow").SemiBold();
+                        x.Span(" | Processado por Computador");
                     });
                 });
             });

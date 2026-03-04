@@ -33,16 +33,25 @@ public class Worker : BackgroundService
         using var connection = await factory.CreateConnectionAsync(stoppingToken);
         using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        // --- FILA DE FATURAS ---
+        // --- FILA DE FATURAS/RECIBOS ---
         await channel.QueueDeclareAsync("faturas_queue", durable: true, exclusive: false, autoDelete: false);
         var faturaConsumer = new AsyncEventingBasicConsumer(channel);
         faturaConsumer.ReceivedAsync += async (model, ea) =>
         {
-            Console.WriteLine("Mensagem recebida na fila de faturas, processando...");
-            try {
+            _logger.LogInformation("Mensagem recebida na faturas_queue, processando...");
+            
+            try 
+            {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
                 var data = JsonSerializer.Deserialize<FaturaMsg>(message);
+
+                if (data == null)
+                {
+                    _logger.LogWarning("Mensagem inválida recebida (corpo nulo).");
+                    await channel.BasicAckAsync(ea.DeliveryTag, false);
+                    return;
+                }
 
                 using (var scope = _scopeFactory.CreateScope())
                 {
@@ -50,32 +59,53 @@ public class Worker : BackgroundService
                     var customerRepo = scope.ServiceProvider.GetRequiredService<ICustomerRepository>();
                     var pdfService = scope.ServiceProvider.GetRequiredService<IPdfService>();
                     var emailSender = scope.ServiceProvider.GetRequiredService<IEmailSender>();
-                    var company = scope.ServiceProvider.GetRequiredService<ICompanyRepository>();
 
-                    var invoice = await invoiceRepo.GetByIdAsync(data!.Id_Fatura);
-                    
-                    // Converte string para o Value Object esperado pelo Repository
+                    var invoice = await invoiceRepo.GetByIdAsync(data.Id_Fatura);
                     var emailVo = new EmailAddress(data.EmailCliente);
                     var customer = await customerRepo.GetByEmailAsync(emailVo); 
-                    
-                    if (invoice != null && customer != null)
+
+                    // 1. Verificação de existência
+                    if (invoice == null || customer == null)
                     {
-                        var pdf = pdfService.GerarFaturaPdfAsync(invoice, customer);
-                        
-                        // Usa o .Value (ou a propriedade que retorna a string) para o envio do email
-                        await emailSender.SendInvoiceEmailAsync(emailVo.Value!, customer.Name, pdf.Result, invoice.InvoiceNumber);
-                        
-                        _logger.LogInformation("Fatura {num} processada e enviada para {email}.", invoice.InvoiceNumber, emailVo.Value);
+                        _logger.LogWarning("Fatura ({idF}) ou Cliente ({email}) não encontrados. Removendo da fila.", data.Id_Fatura, data.EmailCliente);
+                        await channel.BasicAckAsync(ea.DeliveryTag, false);
+                        return;
+                    }
+
+                    // 2. Determinar o tipo de documento e gerar PDF de forma assíncrona (Sem .Result!)
+                    byte[] pdfBytes;
+                    string tipoDoc;
+
+                    if (invoice.Status == "Emitida")
+                    {
+                        pdfBytes = await pdfService.GerarFaturaPdfAsync(invoice, customer);
+                        tipoDoc = "Fatura";
+                    }
+                    else if (invoice.Status == "Paga")
+                    {
+                        pdfBytes = await pdfService.GerarReciboPdfAsync(invoice, customer);
+                        tipoDoc = "Recibo";
                     }
                     else
                     {
-                        _logger.LogWarning("Fatura ou Cliente não encontrado para ID: {id}", data.Id_Fatura);
+                        _logger.LogWarning("Fatura {num} com status '{status}' ignorada.", invoice.InvoiceNumber, invoice.Status);
+                        await channel.BasicAckAsync(ea.DeliveryTag, false);
+                        return;
                     }
+
+                    // 3. Enviar E-mail
+                    await emailSender.SendInvoiceEmailAsync(emailVo.Value!, customer.Name, pdfBytes, invoice.InvoiceNumber, tipoDoc);
+                    
+                    _logger.LogInformation("{tipo} {num} enviada com sucesso para {email}.", tipoDoc, invoice.InvoiceNumber, emailVo.Value);
                 }
+
+                // 4. Confirmar sucesso para o RabbitMQ
                 await channel.BasicAckAsync(ea.DeliveryTag, false);
             }
-            catch (Exception ex) {
-                _logger.LogError(ex, "Erro ao processar faturas_queue");
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex, "Erro crítico ao processar faturas_queue. A mensagem voltará para a fila: erro :{message}", ex.Message);
+                // Em caso de erro técnico (banco fora, rede fora), a mensagem volta para a fila (requeue: true)
                 await channel.BasicNackAsync(ea.DeliveryTag, false, true);
             }
         };

@@ -11,48 +11,73 @@ public class EmailSender : IEmailSender
     public EmailSender(IConfiguration config) => _config = config;
 
    public async Task SendEmailAsync(string to, string subject, string body)
-{
-    var host = _config["Email:Host"];
-    var port = _config["Email:Port"];
-    var user = _config["Email:User"]; // Este é o ID do Mailtrap (0a526...)
-    var pass = _config["Email:Pass"];
-
-    // No Mailtrap, o remetente pode ser qualquer e-mail que você inventar para teste
-    string remetente = "no-reply@faturaflow.com"; 
-
-    using var client = new SmtpClient(host, int.Parse(port ?? "2525"))
     {
-        // Aqui você usa o ID e Senha do Mailtrap para autenticar
-        Credentials = new NetworkCredential(user, pass),
-        EnableSsl = true
-    };
+        var host = _config["Email:Host"];
+        var port = _config["Email:Port"];
+        var user = _config["Email:User"]; 
+        var pass = _config["Email:Pass"];
 
-    var mailMessage = new MailMessage(remetente, to, subject, body) { IsBodyHtml = true };
-    
-    await client.SendMailAsync(mailMessage);
-}
+        // No Mailtrap, o remetente pode ser qualquer e-mail que você inventar para teste
+        string remetente = "no-reply@faturaflow.com"; 
 
-public async Task SendInvoiceEmailAsync(string email, string nome, byte[] pdf, string numero)
-{
-    var subject = $"Fatura Flow - Sua Fatura #{numero}";
-    var body = $"Olá {nome}, segue em anexo a sua fatura.";
-    string remetente = "faturas@faturaflow.com"; // E-mail fictício
+        using var client = new SmtpClient(host, int.Parse(port ?? "2525"))
+        {
+            Credentials = new NetworkCredential(user, pass),
+            EnableSsl = true
+        };
 
-    using var client = new SmtpClient(_config["Email:Host"], int.Parse(_config["Email:Port"] ?? "2525"))
+        var mailMessage = new MailMessage(remetente, to, subject, body) { IsBodyHtml = true };
+        
+        await client.SendMailAsync(mailMessage);
+    }
+
+    public async Task SendInvoiceEmailAsync(string email, string nome, byte[] pdf, string numero, string tipo)
     {
-        Credentials = new NetworkCredential(_config["Email:User"], _config["Email:Pass"]),
-        EnableSsl = true
-    };
+        string subject;
+        string body;
+        string remetente;
+        string nomeArquivo;
 
-    var mailMessage = new MailMessage(remetente, email, subject, body);
-    
-    using var ms = new MemoryStream(pdf);
-    mailMessage.Attachments.Add(new Attachment(ms, $"fatura_{numero}.pdf", "application/pdf"));
+        if (tipo == "Fatura")
+        {
+            subject = $"Fatura Flow - Sua Fatura #{numero}";
+            body = $"Olá {nome}, segue em anexo a sua fatura.";
+            remetente = "faturas@faturaflow.com";
+            nomeArquivo = $"fatura_{numero}.pdf";
+        }
+        else if (tipo == "Recibo")
+        {
+            subject = $"Fatura Flow - Seu Recibo #{numero}";
+            body = $"Olá {nome}, segue em anexo o seu recibo.";
+            remetente = "recibos@faturaflow.com";
+            nomeArquivo = $"recibo_{numero}.pdf";
+        }
+        else
+        {
+            throw new ArgumentException("Tipo de documento inválido. Use 'Fatura' ou 'Recibo'.");
+        }
 
-    await client.SendMailAsync(mailMessage);
-}
+        // 2. Configuração do Cliente SMTP (Só fazemos uma vez)
+        using var client = new SmtpClient(_config["Email:Host"], int.Parse(_config["Email:Port"] ?? "2525"))
+        {
+            Credentials = new NetworkCredential(_config["Email:User"], _config["Email:Pass"]),
+            EnableSsl = true
+        };
 
-    // IMPLEMENTAÇÃO: Envio de Código de Recuperação
+        // 3. Criação da Mensagem
+        using var mailMessage = new MailMessage(remetente, email, subject, body)
+        {
+            IsBodyHtml = true 
+        };
+
+        // 4. Anexar o PDF
+        using var ms = new MemoryStream(pdf);
+        mailMessage.Attachments.Add(new Attachment(ms, nomeArquivo, "application/pdf"));
+
+        // 5. Enviar
+        await client.SendMailAsync(mailMessage);
+    }
+
     public async Task SendCodePassEmailAsync(string email, string token)
     {
         var subject = "FaturaFlow - Recuperação de Senha";

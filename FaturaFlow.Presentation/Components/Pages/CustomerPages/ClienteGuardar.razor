@@ -50,7 +50,16 @@
             {
                 <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
             }
-            else 
+            else if (model.NIF.ToString() == "999999990") // Nif default para cliente final, não editavel por motivos de segurança fiscal
+            {
+                <div class="alert alert-danger text-center border-0 shadow-sm">
+                    <i class="bi bi-exclamation-triangle-fill display-4 d-block mb-3"></i>
+                    <h4 class="fw-bold">Não é possivel editar o Cliente Final</h4>
+                    <p>O cliente que está a tentar editar é o cliente final e não pode ser editado por motivos de segurança fiscal.</p>
+                    <button class="btn btn-primary px-4" @onclick='() => Navigation.NavigateTo("/clientes/ver")'>Voltar à Lista</button>
+                </div>
+            }
+            else
             {
                 <EditForm Model="@model" OnValidSubmit="HandleSave">
                     <DataAnnotationsValidator />
