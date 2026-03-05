@@ -18,7 +18,6 @@
         --ff-light: #f8fafc;
     }
 
-    /* Layout Card Unico */
     .ff-profile-card { border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; background: white; margin-bottom: 2rem; }
     
     .ff-profile-header { 
@@ -38,7 +37,6 @@
         background: var(--ff-cyan);
     }
 
-    /* Formulário e Inputs */
     .ff-section-label {
         font-size: 0.75rem;
         font-weight: 700;
@@ -215,7 +213,6 @@
 </div>
 
 @code {
-    // ID da empresa carregada (se existir)
     private Guid? existingCompanyId = null;
     
     private CompanyFormModel model = new();
@@ -228,9 +225,6 @@
         
         try 
         {
-            // LÓGICA IMPORTANTE:
-            // Busca todas as empresas. Como é single-tenant, pegamos a primeira (FirstOrDefault).
-            // Se não existir nenhuma, o formulário fica vazio para criar a primeira.
             var companies = await CompanyService.GetAllAsync();
             var myCompany = companies.FirstOrDefault();
 
@@ -238,7 +232,6 @@
             {
                 existingCompanyId = myCompany.Id;
                 
-                // Preenche o formulário com os dados existentes
                 model = new CompanyFormModel {
                     Name = myCompany.Name,
                     NIF = myCompany.NIF?.Value ?? "",
@@ -265,7 +258,6 @@
         try {
             errorMessage = "";
             
-            // Se existingCompanyId for null, o serviço cria. Se tiver ID, o serviço atualiza.
             await CompanyService.SaveCompanyAsync(
                 existingCompanyId, 
                 model.Name, 
@@ -277,7 +269,6 @@
                 model.ZipCode
             );
             
-            // Recarrega o ID caso tenha acabado de ser criada para futuros updates sem refresh
             if (existingCompanyId == null)
             {
                 var companies = await CompanyService.GetAllAsync();
@@ -291,7 +282,6 @@
         }
     }
 
-    // Modelo simples para o formulário
     public class CompanyFormModel {
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "O nome é obrigatório.")]
         public string Name { get; set; } = "";

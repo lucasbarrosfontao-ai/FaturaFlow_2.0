@@ -11,8 +11,6 @@ public class PriceTests
         acao.Should().Throw<Exception>();
     }
 }
-
-// VatRateTests.cs
 public class VatRateTests
 {
     [Theory]

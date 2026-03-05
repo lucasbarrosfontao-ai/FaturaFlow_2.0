@@ -16,7 +16,6 @@ namespace FaturaFlow.Domain.ValueObjects
             if (string.IsNullOrWhiteSpace(value))
                 throw new Exception("O Número de Identificação não pode estar vazio.");
 
-            // Standardize: remove spaces, dots or dashes
             value = value.Trim().Replace(".", "").Replace("-", "").Replace(" ", "");
 
             if (!Validate(value))
@@ -27,7 +26,6 @@ namespace FaturaFlow.Domain.ValueObjects
 
         private bool Validate(string taxId)
         {
-            // Portuguese NIF/NIPC must have exactly 9 digits
             if (taxId.Length != 9 || !taxId.All(char.IsDigit))
                 return false;
 

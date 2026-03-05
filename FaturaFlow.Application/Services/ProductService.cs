@@ -44,7 +44,6 @@ public class ProductService
         }
         catch (Exception ex)
         {
-            // Se a referência for única no banco, o erro de duplicidade cairá aqui
             throw new Exception($"Erro ao salvar produto: {ex.Message}");
         }
     }
@@ -54,11 +53,10 @@ public class ProductService
         var product = await _productRepo.GetByIdAsync(id);
         if (product != null)
         {
-            product.Deactivate(); // Método que você deve ter na Entidade Product
+            product.Deactivate();
             await _productRepo.UpdateAsync(product);
         }
     }
-    // Adicione estes dois métodos dentro da classe ProductService
     public async Task<IEnumerable<Product>> GetInactiveAsync()
     {
         var all = await _productRepo.GetAllAsync();
@@ -70,7 +68,7 @@ public class ProductService
         var product = await _productRepo.GetByIdAsync(id);
         if (product != null)
         {
-            product.Activate(); // Método que adicionamos no passo 1
+            product.Activate(); 
             await _productRepo.UpdateAsync(product);
         }
     }

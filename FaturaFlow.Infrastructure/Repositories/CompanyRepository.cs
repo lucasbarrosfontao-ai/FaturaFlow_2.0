@@ -51,15 +51,13 @@ namespace FaturaFlow.Infrastructure.Repositories
             }
         }
 
-        // Mapeamento de erro técnico para erro amigável
         private void HandleDbException(DbUpdateException ex)
         {
-            // Aqui você pode analisar o erro e lançar uma exceção personalizada
             if (ex.InnerException is MySqlException mysqlEx)
             {
                 switch (mysqlEx.Number)
                 {
-                    case 1062: // Duplicate entry
+                    case 1062:
                         throw new Exception("Já existe uma empresa com este nome ou CNPJ.");
                     default:
                         throw new Exception("Ocorreu um erro ao acessar o banco de dados. Tente novamente mais tarde.");

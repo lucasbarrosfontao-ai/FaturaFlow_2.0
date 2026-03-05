@@ -22,8 +22,7 @@ public class CompanyService
     {
         try 
         {
-            // CORREÇÃO: Tratar strings vazias como NULL para Value Objects opcionais
-            var personalId = new PersonalId(nif); // NIF é obrigatório, mantém-se assim
+            var personalId = new PersonalId(nif); 
             
             var phoneNum = string.IsNullOrWhiteSpace(phone) ? null : new PhoneNumber(phone);
             var emailAddr = string.IsNullOrWhiteSpace(email) ? null : new EmailAddress(email);
@@ -46,7 +45,6 @@ public class CompanyService
         }
         catch (Exception ex)
         {
-            // É importante manter a exceção original para saber se foi erro de validação do Value Object
             throw new Exception(ex.Message); 
         }
     }

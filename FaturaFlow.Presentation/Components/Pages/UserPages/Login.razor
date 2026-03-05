@@ -246,8 +246,6 @@
             }
             else
             {
-                // Se chegou aqui, 'user' é NULL. 
-                // Não tente acessar user.Email ou user.Password aqui!
                 mensagemErro = "Utilizador ou palavra-passe incorretos.";
                 Console.WriteLine("Falha no login: utilizador não encontrado ou senha errada.");
             }
@@ -270,7 +268,6 @@
 
         try
         {
-            // Camada de Application gera o código, salva no banco e envia para o RabbitMQ
             await AuthService.RequestPasswordResetAsync(emailRecuperacaoInput);
 
             await JSRuntime.InvokeVoidAsync("alert", "O código foi enviado para o seu e-mail!");

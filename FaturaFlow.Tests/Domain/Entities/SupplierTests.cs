@@ -12,7 +12,7 @@ namespace FaturaFlow.Tests.Domain.Entities
         {
             return new Supplier(
                 "Software House Lda",
-                new PersonalId("501306072"), // NIPC válido
+                new PersonalId("501306072"),
                 "Carlos Representante",
                 new PhoneNumber("210000000"),
                 new EmailAddress("contacto@software.com"),
@@ -36,11 +36,10 @@ namespace FaturaFlow.Tests.Domain.Entities
         public void Nao_Deve_Permitir_Fornecedor_Sem_Nome()
         {
             Action acao = () => new Supplier(
-                "", // Nome vazio
+                "",
                 new PersonalId("501306072"), null, null, null, null, null, null
             );
 
-            // O teu código lança esta mensagem específica
             acao.Should().Throw<Exception>()
                 .WithMessage("O nome do cliente é obrigatório.");
         }

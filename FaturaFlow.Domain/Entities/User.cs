@@ -6,8 +6,8 @@ namespace FaturaFlow.Domain.Entities
     {
         public Guid Id { get; private set; }
         public string Username { get; private set; }
-        public string Password { get; private set; } // Aqui guardamos o HASH (já encriptado)
-        public EmailAddress? Email { get; private set; } // Reutilizando o teu Value Object!
+        public string Password { get; private set; } 
+        public EmailAddress? Email { get; private set; } 
         public string? RecoveryCode { get; private set; }
         #pragma warning disable CS8618 
         private User () {}
@@ -26,7 +26,6 @@ namespace FaturaFlow.Domain.Entities
             Email = email;
         }
 
-        // Método para quando o utilizador muda a senha
         public void UpdatePassword(string newPasswordHash)
         {
             if (string.IsNullOrWhiteSpace(newPasswordHash))
@@ -35,7 +34,6 @@ namespace FaturaFlow.Domain.Entities
             Password = newPasswordHash;
         }
 
-        // Método para gerar código de recuperação
         public void SetRecoveryCode(string code)
         {
             if (string.IsNullOrWhiteSpace(code)) throw new Exception("Código inválido");

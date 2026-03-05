@@ -7,7 +7,7 @@ namespace FaturaFlow.Domain.Entities
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public string Reference { get; private set; }
-        public string? UnitOfMeasure { get; private set; } // Unidade de medida (Ex: Un, Kg, L)
+        public string? UnitOfMeasure { get; private set; } 
         
         public Price PurchasePrice { get; private set; }
         public Price SalePrice { get; private set; }
@@ -36,7 +36,6 @@ namespace FaturaFlow.Domain.Entities
             IsActive = true;
         }
 
-        // Métodos de Stock (Permite negativo como pediste)
         public void AddStock(int quantity) => StockQuantity += quantity;
         public void RemoveStock(int quantity) => StockQuantity -= quantity;
 
@@ -50,7 +49,7 @@ namespace FaturaFlow.Domain.Entities
             UnitOfMeasure = unit;
             PurchasePrice = purchasePrice;
             SalePrice = salePrice;
-            VatRate = vat; // Use o nome que definiu (Vat ou VatRate)
+            VatRate = vat;
             StockQuantity = stock;
             SupplierId = supplierId;
         }

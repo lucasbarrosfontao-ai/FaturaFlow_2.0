@@ -1,5 +1,4 @@
 ﻿using FaturaFlow.Domain.Interfaces;
-using BCrypt.Net; // Você precisaria instalar o pacote: BCrypt.Net-Next
 
 namespace FaturaFlow.Infrastructure.Services
 {
@@ -7,7 +6,6 @@ namespace FaturaFlow.Infrastructure.Services
     {
         public string HashPassword(string password)
         {
-            // Gera um Hash seguro com um "Salt" automático
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
 

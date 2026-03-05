@@ -17,11 +17,9 @@ public class SalesService
         var agora = DateTime.Now;
         var limiteAno = agora.AddYears(-1);
         
-        // Buscamos as faturas do repositório
         var allInvoices = await _invoiceRepo.GetAllAsync();
         var faturas = allInvoices.Where(f => f.IssueDate >= limiteAno).ToList();
 
-        // 1. ÚLTIMAS 24 HORAS
         var limite24h = agora.AddHours(-24);
         var v24h = faturas
             .Where(f => f.IssueDate >= limite24h)
@@ -30,7 +28,6 @@ public class SalesService
             .OrderBy(x => x.Label)
             .ToList();
 
-        // 2. ÚLTIMOS 7 DIAS
         var limiteSemana = DateTime.Today.AddDays(-7);
         var vSemana = faturas
             .Where(f => f.IssueDate >= limiteSemana)
@@ -39,7 +36,6 @@ public class SalesService
             .OrderBy(x => x.OriginalDate)
             .ToList();
 
-        // 3. ÚLTIMOS 12 MESES
         var vAno = faturas
             .GroupBy(f => new { f.IssueDate.Year, f.IssueDate.Month })
             .Select(g => new ChartDataPoint(

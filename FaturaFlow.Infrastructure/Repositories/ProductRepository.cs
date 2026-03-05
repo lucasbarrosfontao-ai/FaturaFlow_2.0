@@ -56,7 +56,6 @@ namespace FaturaFlow.Infrastructure.Repositories
         {
             if (ex.InnerException is MySqlException mysqlEx && mysqlEx.Number == 1062)
             {
-                // O campo 'Reference' é o identificador único comercial do produto
                 if (mysqlEx.Message.Contains("Reference"))
                     throw new Exception("Já existe um produto registado com esta referência.");
 

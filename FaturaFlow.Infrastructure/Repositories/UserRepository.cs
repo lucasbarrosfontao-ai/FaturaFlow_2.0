@@ -1,6 +1,6 @@
 using FaturaFlow.Domain.Entities;
 using FaturaFlow.Domain.Interfaces;
-using FaturaFlow.Domain.ValueObjects; // Importante para o EmailAddress
+using FaturaFlow.Domain.ValueObjects;
 using FaturaFlow.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 

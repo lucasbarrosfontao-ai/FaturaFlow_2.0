@@ -20,14 +20,12 @@ public class AuthService
         _messageService = messageService;
     }
 
-    // --- LOGIN ---
     public async Task<User?> LoginAsync(string username, string password)
     {
         var user = await _userRepo.GetByUsernameAsync(username);
 
         if (user == null) return null;
 
-        // Compara a senha digitada com o Hash do banco
         if (_passwordHasher.VerifyPassword(password, user.Password))
         {
             return user;
@@ -36,27 +34,21 @@ public class AuthService
         return null;
     }
 
-    // --- REGISTO ---
     public async Task<User> RegisterUserAsync(string username, string rawPassword, string email)
     {
-        // 1. Validar se o utilizador já existe
         var existingUser = await _userRepo.GetByUsernameAsync(username);
         if (existingUser != null)
             throw new Exception("Este nome de utilizador já está em uso.");
 
-        // 2. Encriptar a senha
         string hashedPassword = _passwordHasher.HashPassword(rawPassword);
 
-        // 3. Criar a entidade (O construtor da User já valida se os campos estão vazios)
         var newUser = new User(username, hashedPassword, new EmailAddress(email));
 
-        // 4. Salvar no banco
         await _userRepo.AddAsync(newUser);
 
         return newUser;
     }
 
-    // --- RECUPERAÇÃO DE SENHA ---
     public async Task RequestPasswordResetAsync(string email)
     {
         var emailVo = new EmailAddress(email);
@@ -65,13 +57,11 @@ public class AuthService
         if (user == null)
             throw new Exception("Utilizador não encontrado com este e-mail.");
 
-        // Gerar código e atualizar o usuário
         string code = new Random().Next(100000, 999999).ToString();
         user.SetRecoveryCode(code);
 
         await _userRepo.UpdateAsync(user);
 
-        // Enviar para a fila do RabbitMQ
         await _messageService.SendPasswordRecoveryAsync(email, code);
     }
     public async Task<IEnumerable<User>> GetAllUsersAsync() => await _userRepo.GetAllAsync();
@@ -80,7 +70,6 @@ public class AuthService
 
     public async Task DeleteUserAsync(Guid id) => await _userRepo.DeleteAsync(id);
 
-    // --- REDEFINIR SENHA COM CÓDIGO ---
     public async Task ResetPasswordWithCodeAsync(string email, string code, string newPassword)
     {
         var user = await _userRepo.GetByEmailAsync(new EmailAddress(email)) 
@@ -95,7 +84,6 @@ public class AuthService
         await _userRepo.UpdateAsync(user);
     }
 
-    // --- ATUALIZAR DADOS (COM VALIDAÇÃO DE SENHA ANTIGA) ---
     public async Task UpdateUserAsync(Guid userId, string oldPassword, string newUsername, string newEmail, string? newPassword)
     {
         var user = await _userRepo.GetByIdAsync(userId) ?? throw new Exception("Utilizador não encontrado.");

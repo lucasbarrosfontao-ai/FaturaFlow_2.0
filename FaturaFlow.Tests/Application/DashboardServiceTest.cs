@@ -35,38 +35,31 @@ namespace FaturaFlow.Tests.Application
         [Fact]
         public async Task GetStatsAsync_Deve_Calcular_Estatisticas_Corretamente()
         {
-            // --- ARRANGE ---
-
-            // 1. Simular Clientes (2 clientes)
             var customers = new List<Customer> {
                 new Customer("C1", new PersonalId("123456789"), null, null, null, null, null),
                 new Customer("C2", new PersonalId("501306072"), null, null, null, null, null)
             };
             _customerRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(customers);
 
-            // 2. Simular Faturas (2 faturas com total somado de 150.00)
             var inv1 = new Invoice(Guid.NewGuid(), "FAT1");
-            inv1.AddLine(Guid.NewGuid(), 1, new Price(100), new VatRate(0)); // Total 100
+            inv1.AddLine(Guid.NewGuid(), 1, new Price(100), new VatRate(0));
 
             var inv2 = new Invoice(Guid.NewGuid(), "FAT2");
-            inv2.AddLine(Guid.NewGuid(), 1, new Price(50), new VatRate(0));  // Total 50
+            inv2.AddLine(Guid.NewGuid(), 1, new Price(50), new VatRate(0));  
 
             _invoiceRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Invoice> { inv1, inv2 });
 
-            // 3. Simular Produtos (1 com stock baixo, 1 com stock normal)
-            var p1 = new Product("P1", "R1", "Un", new Price(10), new Price(20), new VatRate(23), 2, Guid.NewGuid()); // Stock 2 (< 5)
-            var p2 = new Product("P2", "R2", "Un", new Price(10), new Price(20), new VatRate(23), 10, Guid.NewGuid()); // Stock 10
+            var p1 = new Product("P1", "R1", "Un", new Price(10), new Price(20), new VatRate(23), 2, Guid.NewGuid());
+            var p2 = new Product("P2", "R2", "Un", new Price(10), new Price(20), new VatRate(23), 10, Guid.NewGuid()); 
 
             _productRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Product> { p1, p2 });
 
-            // --- ACT ---
             var stats = await _service.GetStatsAsync();
 
-            // --- ASSERT ---
             stats.TotalCustomers.Should().Be(2);
             stats.TotalInvoices.Should().Be(2);
             stats.TotalInvoicedAmount.Should().Be(150.00m);
-            stats.LowStockProducts.Should().Be(1); // Apenas o p1 tem stock < 5
+            stats.LowStockProducts.Should().Be(1); 
         }
     }
 }

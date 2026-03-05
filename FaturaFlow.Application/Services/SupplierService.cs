@@ -25,21 +25,17 @@ public class SupplierService
     {
         try 
         {
-            // 1. Criar Value Objects
             var nipcVo = new PersonalId(nipc);
             var emailVo = new EmailAddress(email);
             var phoneVo = new PhoneNumber(phone);
             var postalVo = new PostalCode(zipCode);
 
-            // 2. VERIFICAÇÃO (Evita congelamento)
             var existingSupplierWithNipc = await _supplierRepo.GetByNIPCAsync(nipcVo);
 
             if (existingSupplierWithNipc != null)
             {
-                // Se estamos editando
                 if (id.HasValue && id != Guid.Empty)
                 {
-                    // Se o ID encontrado no banco for DIFERENTE do ID que estamos editando
                     if (existingSupplierWithNipc.Id != id.Value)
                     {
                         throw new Exception("O NIPC já existe e pertence a outro fornecedor.");
@@ -47,12 +43,10 @@ public class SupplierService
                 }
                 else
                 {
-                    // Se é novo cadastro
                     throw new Exception("O NIPC já existe.");
                 }
             }
 
-            // 3. Salvar ou Atualizar
             if (id.HasValue && id != Guid.Empty)
             {
                 var existing = await _supplierRepo.GetByIdAsync(id.Value) 
@@ -69,7 +63,6 @@ public class SupplierService
         }
         catch (Exception ex)
         {
-            // Repassa a mensagem limpa para o Blazor exibir
             throw new Exception($"Erro ao salvar fornecedor: {ex.Message}");
         }
     }

@@ -20,7 +20,6 @@
 
     .ff-dashboard-container { background-color: var(--ff-bg-light); min-height: 100vh; }
     
-    /* Banner Principal */
     .ff-welcome-banner {
         background: linear-gradient(135deg, var(--ff-dark-blue) 0%, var(--ff-blue) 100%);
         border-radius: 20px;
@@ -40,7 +39,6 @@
         border-radius: 50%;
     }
 
-    /* Cards de Estatísticas */
     .ff-stat-card {
         border: none;
         border-radius: 15px;
@@ -53,7 +51,6 @@
     .ff-stat-amount { border-left-color: #2ecc71; }
     .ff-stat-stock { border-left-color: #e74c3c; }
 
-    /* Cards de Ação */
     .ff-action-card {
         background: white;
         border-radius: 12px;
@@ -86,7 +83,6 @@
         transition: all 0.3s;
     }
 
-    /* Status System */
     .ff-status-dot {
         height: 10px;
         width: 10px;
@@ -298,12 +294,10 @@ else
 
         try 
         {
-            // Chamada única ao serviço de aplicação
             stats = await DashboardService.GetStatsAsync();
         }
         catch (Exception ex)
         {
-            // Opcional: Logar erro ou mostrar mensagem
             Console.WriteLine(ex.Message);
         }
     }

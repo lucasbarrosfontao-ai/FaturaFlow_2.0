@@ -64,7 +64,6 @@ public class Worker : BackgroundService
                     var emailVo = new EmailAddress(data.EmailCliente);
                     var customer = await customerRepo.GetByEmailAsync(emailVo); 
 
-                    // 1. Verificação de existência
                     if (invoice == null || customer == null)
                     {
                         _logger.LogWarning("Fatura ({idF}) ou Cliente ({email}) não encontrados. Removendo da fila.", data.Id_Fatura, data.EmailCliente);
@@ -72,7 +71,6 @@ public class Worker : BackgroundService
                         return;
                     }
 
-                    // 2. Determinar o tipo de documento e gerar PDF de forma assíncrona (Sem .Result!)
                     byte[] pdfBytes;
                     string tipoDoc;
 
@@ -93,19 +91,16 @@ public class Worker : BackgroundService
                         return;
                     }
 
-                    // 3. Enviar E-mail
                     await emailSender.SendInvoiceEmailAsync(emailVo.Value!, customer.Name, pdfBytes, invoice.InvoiceNumber, tipoDoc);
                     
                     _logger.LogInformation("{tipo} {num} enviada com sucesso para {email}.", tipoDoc, invoice.InvoiceNumber, emailVo.Value);
                 }
 
-                // 4. Confirmar sucesso para o RabbitMQ
                 await channel.BasicAckAsync(ea.DeliveryTag, false);
             }
             catch (Exception ex) 
             {
                 _logger.LogError(ex, "Erro crítico ao processar faturas_queue. A mensagem voltará para a fila: erro :{message}", ex.Message);
-                // Em caso de erro técnico (banco fora, rede fora), a mensagem volta para a fila (requeue: true)
                 await channel.BasicNackAsync(ea.DeliveryTag, false, true);
             }
         };
@@ -148,6 +143,5 @@ public class Worker : BackgroundService
     }
 }
 
-// Classes de mapeamento (devem ter o mesmo nome das propriedades que o RabbitMQService envia)
 public record FaturaMsg(Guid Id_Fatura, string NomeCliente, string EmailCliente);
 public record RecuperacaoMsg(string Email, string Codigo);

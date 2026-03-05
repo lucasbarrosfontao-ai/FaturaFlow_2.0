@@ -62,12 +62,10 @@ namespace FaturaFlow.Infrastructure.Repositories
             }
         }
 
-        // Mapeamento de erro técnico para erro amigável
         private void HandleDbException(DbUpdateException ex)
         {
             if (ex.InnerException is MySqlException mysqlEx && mysqlEx.Number == 1062)
             {
-                // Aqui você traduz o erro do MySQL para algo que o seu Service entenda
                 if (mysqlEx.Message.Contains("Email"))
                     throw new Exception("Este e-mail já está em uso por outro cliente.");
                 
@@ -77,7 +75,7 @@ namespace FaturaFlow.Infrastructure.Repositories
                 throw new Exception("Existem dados duplicados que não podem ser guardados.");
             }
 
-            throw ex; // Se não for erro de duplicidade, lança o erro original
+            throw ex; 
         }
         public async Task DeactivateAsync(Guid id)
         {

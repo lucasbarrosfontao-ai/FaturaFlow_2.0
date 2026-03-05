@@ -24,7 +24,6 @@ namespace FaturaFlow.Domain.Entities
             UnitPrice = unitPrice;
             VatRate = vatRate;
 
-            // Lógica de cálculo dentro da linha
             Subtotal = quantity * unitPrice.Value;
             VatAmount = Subtotal * (vatRate.Value / 100);
         }

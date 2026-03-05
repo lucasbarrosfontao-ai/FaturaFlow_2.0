@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copiar os ficheiros de projeto (.csproj) primeiro para cache de restauro
+# Copiar os ficheiros de projeto primeiro para cache de restauro
 COPY ["FaturaFlow.Presentation/FaturaFlow.Presentation.csproj", "FaturaFlow.Presentation/"]
 COPY ["FaturaFlow.Application/FaturaFlow.Application.csproj", "FaturaFlow.Application/"]
 COPY ["FaturaFlow.Domain/FaturaFlow.Domain.csproj", "FaturaFlow.Domain/"]

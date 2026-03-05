@@ -116,7 +116,7 @@ else
                                     <td class="ff-td">
                                         <span class="small text-secondary"><i class="bi bi-geo-alt me-1"></i>@client.City</span>
                                     </td>
-                                    @if (client.NIF.Value.ToString() != "999999990") // NIF do Cliente Final, que não pode ser editado nem eliminado
+                                    @if (client.NIF.Value.ToString() != "999999990")
                                     {
                                     <td class="ff-td text-center">
                                         <button class="btn btn-outline-primary ff-btn-action me-1" title="Editar" @onclick="() => EditClient(client.Id)">
@@ -166,7 +166,6 @@ else
         
         clientList = searchField switch
         {
-            // Adicionamos o ?.Value e garantimos que não seja nulo antes do Contains
             "Nome" => all.Where(c => c.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList(),
             
             "NIF" => all.Where(c => c.NIF?.Value != null && 

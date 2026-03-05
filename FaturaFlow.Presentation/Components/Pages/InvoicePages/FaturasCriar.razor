@@ -269,7 +269,6 @@ else
         try {
             msg = "";
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            // Chama o método específico de Rascunho (Não baixa estoque)
             await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, items);
             
             await JSRuntime.InvokeVoidAsync("alert", "Rascunho guardado com sucesso!");
@@ -288,7 +287,6 @@ else
             msg = "";
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
             
-            // Fluxo correto: Cria como rascunho e depois Emite (baixando estoque)
             var id = await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber,invoiceDate, items);
             await InvoiceService.EmitInvoiceAsync(id);
 

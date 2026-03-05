@@ -1,0 +1,75 @@
+======================================================================
+                   FATURAFLOW 2.0 - SISTEMA DE GESTÃO
+                      DOCUMENTAÇÃO E INFORMAÇÕES
+======================================================================
+
+1. PROPÓSITO DO PROJETO
+O FaturaFlow 2.0 é um sistema completo de faturação e gestão de inventário 
+desenvolvido como projeto final para a Prova de Aptidão Profissional (PAP) 
+no curso de Técnico de Informática de Gestão (2025-2026).
+
+O objetivo principal foi elevar o padrão de desenvolvimento acadêmico para 
+um nível profissional, implementando uma arquitetura escalável, modular 
+e resiliente, capaz de lidar com processamentos intensivos em segundo plano.
+
+2. STACK TECNOLÓGICA (BACKEND & INFRAESTRUTURA)
+O sistema foi construído sobre as tecnologias mais modernas do ecossistema .NET:
+
+   - Linguagem: C# (.NET 8.0)
+   - Arquitetura: Clean Architecture & Domain-Driven Design (DDD)
+   - Interface: Razor Pages (Server-side rendering para alta performance)
+   - Mensageria: RabbitMQ (Processamento assíncrono de documentos e e-mails)
+   - Banco de Dados: MySQL 8.0
+   - Contentorização: Docker & Docker Compose
+   - Geração de PDF: QuestPDF (Baseado em layouts fluentes)
+   - Comunicação: MailKit (Integração SMTP para envio de faturas)
+
+3. ARQUITETURA E DIFERENCIAIS TÉCNICOS
+Diferente de sistemas monolíticos convencionais, o FaturaFlow 2.0 utiliza:
+   - Worker Services: Um serviço independente que consome filas do RabbitMQ, 
+     permitindo que o utilizador continue navegando enquanto faturas 
+     pesadas são geradas e enviadas por e-mail (Princípio Fire-and-Forget).
+   - Camadas Independentes: Domain, Application, Infrastructure, Presentation 
+     e Worker, garantindo que a lógica de negócio seja testável e isolada.
+   - Resiliência: Estratégias de Retry em código para garantir a conexão 
+     entre os contentores Docker durante o startup.
+
+4. ESTABILIDADE E RELATO DE ERROS
+Como este é um projeto de caráter educacional e de constante evolução 
+pessoal, o código está sujeito a falhas ou comportamentos inesperados 
+em cenários não previstos durante os testes acadêmicos.
+
+   - REPORTAR ERROS: Caso encontre algum bug, inconsistência lógica ou 
+     vulnerabilidade, por favor, entre em contacto através do e-mail 
+     ou telefone listados na seção 7. O seu feedback é fundamental para 
+     o meu crescimento técnico.
+
+5. MANUTENÇÃO E ATUALIZAÇÕES
+   - Este repositório reflete o estado final da minha avaliação técnica.
+   - ATUALIZAÇÕES PONTUAIS: Poderão ocorrer correções de bugs reportados 
+     ou pequenos ajustes de performance no futuro.
+   - GRANDES ATUALIZAÇÕES: Não estão previstas novas funcionalidades em 
+     larga escala ou mudanças drásticas na estrutura do projeto, uma 
+     vez que o objetivo acadêmico principal foi atingido.
+
+6. DISCLAIMER E AVISOS LEGAIS (IMPORTANTE)
+   - USO ACADÉMICO: Este software foi desenvolvido estritamente para fins 
+     didáticos e de avaliação profissional.
+   - AUTORIDADE TRIBUTÁRIA (AT): Este programa NÃO possui certificação da 
+     Autoridade Tributária e Aduaneira de Portugal. Portanto, NÃO pode ser 
+     utilizado para fins comerciais, emissão de faturas reais com valor fiscal 
+     ou qualquer atividade contábil oficial.
+   - RESPONSABILIDADE: O autor não se responsabiliza pelo uso indevido 
+     deste código em ambientes de produção.
+
+7. CONTACTO E PORTFÓLIO
+Desenvolvido por: Lucas Hariel de Barros Fontão
+Escola: Escola Secundária Camilo Castelo Branco (Vila Real)
+
+   - GitHub: https://github.com/lucasbarrosfontao-ai
+   - Email: lucasbarrosfontao@gmail.com
+   - Contacto: (+351) 966-605-093
+
+======================================================================
+           "Transformando lógica em soluções de gestão."
+======================================================================

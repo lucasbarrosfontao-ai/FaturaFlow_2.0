@@ -1,11 +1,10 @@
-### --- SEGURANÇA E SEGREDOS (NUNCA ENVIAR) ---
+
 .env
 aspnet-keys/
 secrets.json
 *.pfx
 *.certificate
 
-### --- FERRAMENTAS ESPECÍFICAS (IA / IDE) ---
 .continue/
 .vs/
 .vscode/
@@ -14,7 +13,6 @@ secrets.json
 *.userosscache
 *.sln.docstates
 
-### --- DOTNET (BUILD E TEMPORÁRIOS) ---
 [Bb]in/
 [Oo]bj/
 .librarymanager/
@@ -22,23 +20,11 @@ secrets.json
 nupkg/
 *.log
 
-### --- DOCKER ---
 .dockerignore
-# Se você tiver configurações locais no docker que não quer compartilhar:
-# docker-compose.override.yml
 
-### --- NODE / FRONTEND (Se houver) ---
 node_modules/
 npm-debug.log*
 wwwroot/lib/
 
-### --- BANCO DE DADOS LOCAL ---
-*.db
-*.db-shm
-*.db-wal
-
-### --- SISTEMA OPERACIONAL ---
 Thumbs.db
 .DS_Store
-
-*.txt

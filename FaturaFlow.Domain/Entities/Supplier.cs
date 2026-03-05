@@ -4,7 +4,6 @@ namespace FaturaFlow.Domain.Entities
 {
     public class Supplier
     {
-        // Propriedades em Inglês e PascalCase
         public Guid Id { get; private set; }
         public string CompanyName { get; private set; }
         public PersonalId? NIPC { get; private set; }
@@ -50,7 +49,6 @@ namespace FaturaFlow.Domain.Entities
             ZipCode = zipCode;
         }
 
-        // Soft Delete (Desativar)
         public void Deactivate()
         {
             IsActive = false;

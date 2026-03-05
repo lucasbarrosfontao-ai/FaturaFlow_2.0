@@ -16,7 +16,6 @@ public class PdfGeneratorService : IPdfService
 
     static PdfGeneratorService() => QuestPDF.Settings.License = LicenseType.Community;
 
-    // Construtor com a injeção do repositório de produtos
     public PdfGeneratorService(ICompanyRepository companyRepository, IProductRepository productRepository)
     {
         _companyRepository = companyRepository;
@@ -28,7 +27,6 @@ public class PdfGeneratorService : IPdfService
         var companyId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var company = await _companyRepository.GetByIdAsync(companyId);
         
-        // 1. Buscamos todos os nomes dos produtos antes de desenhar o PDF
         var nomesProdutos = new Dictionary<Guid, string>();
         foreach (var linha in invoice.Lines)
         {
@@ -127,7 +125,6 @@ public class PdfGeneratorService : IPdfService
 
                         foreach (var linha in invoice.Lines)
                         {
-                            // 2. AQUI ESTÁ A MUDANÇA: Pegamos o nome do dicionário em vez de usar o ID
                             string nomeDoProduto = nomesProdutos.ContainsKey(linha.ProductId) 
                                                    ? nomesProdutos[linha.ProductId] 
                                                    : linha.ProductId.ToString();
@@ -193,7 +190,7 @@ public class PdfGeneratorService : IPdfService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Verdana));
 
-                // --- CABEÇALHO (Verde para indicar Recibo/Pago) ---
+                // --- CABEÇALHO  ---
                 page.Header().Row(row =>
                 {
                     row.RelativeItem().Column(col =>
@@ -214,7 +211,6 @@ public class PdfGeneratorService : IPdfService
                 // --- CONTEÚDO ---
                 page.Content().PaddingVertical(20).Column(col =>
                 {
-                    // Banner de Confirmação de Pagamento
                     col.Item().Background(Colors.Green.Lighten5).Padding(10).Row(row =>
                     {
                         row.RelativeItem().Column(c =>
@@ -233,15 +229,14 @@ public class PdfGeneratorService : IPdfService
 
                     col.Item().PaddingVertical(15);
 
-                    // Tabela com a Referência da Fatura
                     col.Item().Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
-                            columns.RelativeColumn(3); // Descrição do documento
-                            columns.RelativeColumn();  // Data do documento
-                            columns.RelativeColumn();  // Valor Original
-                            columns.RelativeColumn();  // Valor Pago
+                            columns.RelativeColumn(3); 
+                            columns.RelativeColumn(); 
+                            columns.RelativeColumn();  
+                            columns.RelativeColumn();  
                         });
 
                         table.Header(header =>
@@ -255,7 +250,6 @@ public class PdfGeneratorService : IPdfService
                                 container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
                         });
 
-                        // Linha única referenciando a fatura
                         table.Cell().Element(RowStyle).Text($"Fatura nº {invoice.InvoiceNumber}");
                         table.Cell().Element(RowStyle).Text(invoice.IssueDate.ToString("dd/MM/yyyy", _culture));
                         table.Cell().Element(RowStyle).AlignRight().Text(invoice.TotalPayable.ToString("C", _culture));
@@ -267,7 +261,6 @@ public class PdfGeneratorService : IPdfService
 
                     col.Item().PaddingVertical(20);
 
-                    // Espaço para Notas ou Meio de Pagamento
                     col.Item().Row(row => 
                     {
                         row.RelativeItem().Column(c => {

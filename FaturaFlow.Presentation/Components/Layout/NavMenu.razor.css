@@ -1,4 +1,7 @@
 /* --- CONFIGURAÇÕES DE CORES --- */
+
+/* --- Arquivo Inutil, caso queira alterar o CSS do NAVMENU, vá no arquivo principal (conflitos com o CSS global e o CSS do Blazor
+) --- */
 :root {
     --nav-fundo: #001a33;
     --nav-cyan: #00daff;
@@ -8,17 +11,14 @@
     --nav-text-white: #ffffff;
 }
 
-/* Container principal */
 .ff-nav-container {
     background-color: var(--nav-fundo) !important;
 }
 
-/* Navbar topo */
 .ff-navbar {
     background-color: rgba(0, 0, 0, 0.2);
 }
 
-/* --- QUADRADINHOS DAS SEÇÕES --- */
 .ff-nav-section-wrapper {
     padding: 20px 16px 8px 16px;
 }
@@ -36,10 +36,9 @@
     border: 1px solid rgba(0, 218, 255, 0.2);
 }
 
-/* --- LINKS DE NAVEGAÇÃO --- */
 .nav-item ::deep a, 
 .nav-item .nav-link {
-    color: var(--nav-text-white) !important; /* FORÇA BRANCO */
+    color: var(--nav-text-white) !important;
     background: transparent;
     padding: 0.6rem 1rem;
     border-radius: 6px;
@@ -50,37 +49,33 @@
     font-weight: 400;
 }
 
-/* Ícones dos Links */
 .nav-item ::deep i, 
 .nav-item .nav-link i {
-    color: var(--nav-cyan) !important; /* ÍCONES SEMPRE CIANO */
+    color: var(--nav-cyan) !important; 
     margin-right: 12px;
     font-size: 1.1rem;
     width: 20px;
     text-align: center;
 }
 
-/* HOVER (Passar o mouse) */
 .nav-item ::deep a:hover,
 .nav-item .nav-link:hover {
     background-color: rgba(255, 255, 255, 0.1) !important;
     color: var(--nav-cyan) !important;
 }
 
-/* ITEM ATIVO (Estilo igual ao da sua imagem do Dashboard) */
 .nav-item ::deep a.active,
 .nav-item .nav-link.active {
     background-color: var(--nav-active-bg) !important;
-    color: var(--nav-active-text) !important; /* Texto escuro no fundo claro */
+    color: var(--nav-active-text) !important; 
     font-weight: 700 !important;
 }
 
 .nav-item ::deep a.active i,
 .nav-item .nav-link.active i {
-    color: var(--nav-active-text) !important; /* Ícone escuro no fundo claro */
+    color: var(--nav-active-text) !important; 
 }
 
-/* --- BOTÃO SAIR --- */
 .ff-logout-btn {
     background-color: rgba(255, 120, 120, 0.1) !important;
     color: #ff8585 !important;
@@ -104,7 +99,6 @@
     color: white !important;
 }
 
-/* Scroll fix */
 @media (min-width: 641px) {
     .nav-scrollable {
         height: calc(100vh - 3.5rem);

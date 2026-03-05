@@ -61,7 +61,6 @@ namespace FaturaFlow.Infrastructure.Repositories
         {
             if (ex.InnerException is MySqlException mysqlEx && mysqlEx.Number == 1062)
             {
-                // Verifica o campo duplicado no Fornecedor
                 if (mysqlEx.Message.Contains("Email"))
                     throw new Exception("Este e-mail já está associado a outro fornecedor.");
                 

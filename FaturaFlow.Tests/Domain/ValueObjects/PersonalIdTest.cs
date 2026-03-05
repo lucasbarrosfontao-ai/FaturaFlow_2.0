@@ -8,9 +8,9 @@ namespace FaturaFlow.Tests.Domain.ValueObjects
     public class PersonalIdTests
     {
         [Theory]
-        [InlineData("123456789")]    // Consumidor Final (Válido)
-        [InlineData("501306072")]    // Microsoft Portugal (Válido - Termina em 3)
-        [InlineData(" 256.241.210 ")] // NIF Válido (Termina em 0) com pontos e espaços
+        [InlineData("123456789")]    
+        [InlineData("501306072")]    
+        [InlineData(" 256.241.210 ")] 
         public void Deve_Aceitar_NIF_Valido_E_Limpar_Formatacao(string nifInput)
         {
             // Act
@@ -26,7 +26,7 @@ namespace FaturaFlow.Tests.Domain.ValueObjects
         [Fact]
         public void Deve_Lancar_Erro_Se_CheckDigit_For_Invalido()
         {
-            // "123456780" é inválido (o algoritmo espera 9 no final)
+           
             Action acao = () => new PersonalId("123456780");
 
             acao.Should().Throw<Exception>()

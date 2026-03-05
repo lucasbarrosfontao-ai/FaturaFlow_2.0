@@ -11,15 +11,12 @@ namespace FaturaFlow.Tests.Domain.Entities
         [Fact]
         public void Deve_Criar_Utilizador_Com_Sucesso()
         {
-            // Arrange
             var username = "lucas.admin";
-            var passwordHash = "AQAAAAEAACcQAAAAE..."; // Simulação de hash
+            var passwordHash = "AQAAAAEAACcQAAAAE..."; 
             var email = new EmailAddress("admin@faturaflow.com");
 
-            // Act
             var user = new User(username, passwordHash, email);
 
-            // Assert
             user.Id.Should().NotBeEmpty();
             user.Username.Should().Be(username);
             user.Email.Value.Should().Be("admin@faturaflow.com");
@@ -51,11 +48,9 @@ namespace FaturaFlow.Tests.Domain.Entities
         {
             var user = new User("lucas", "senha");
 
-            // 1. Definir código
             user.SetRecoveryCode("123456");
             user.RecoveryCode.Should().Be("123456");
 
-            // 2. Limpar código
             user.ClearRecoveryCode();
             user.RecoveryCode.Should().BeNull();
         }

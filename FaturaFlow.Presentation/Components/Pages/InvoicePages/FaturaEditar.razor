@@ -42,7 +42,7 @@
     .btn-primary { background-color: var(--ff-blue); border: none; }
     .btn-primary:hover { background-color: var(--ff-dark-blue); }
 
-    .btn-emitir { background-color: #28a745; border: none; } /* Verde para Emitir */
+    .btn-emitir { background-color: #28a745; border: none; }
     .btn-emitir:hover { background-color: #218838; }
 
 </style>
@@ -105,7 +105,7 @@ else
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold text-muted small">Data de Emissão</label>
-                        <input type="date" class="form-control ff-input-group p-2" @bind="invoiceDate" disabled /> @* Data de emissão de rascunho geralmente não é editável *@
+                        <input type="date" class="form-control ff-input-group p-2" @bind="invoiceDate" disabled />
                     </div>
                 </div>
 
@@ -163,7 +163,7 @@ else
                             }
                             @foreach (var item in tempItems) {
                                 var p = products.FirstOrDefault(x => x.Id == item.ProdId);
-                                if (p == null) continue; // Garante que o produto existe
+                                if (p == null) continue; 
 
                                 <tr>
                                     <td class="fw-bold text-dark">@p.Name</td>
@@ -278,7 +278,6 @@ else
                 }
             }
         } catch (Exception ex) {
-            // Se tentar editar uma fatura que não é rascunho, a mensagem aparece aqui
             msg = ex.Message; 
             invoice = null; 
         } finally {
@@ -305,7 +304,6 @@ else
             return;
         }
         
-        // Se o produto já existe na lista, apenas soma a quantidade
         var existing = tempItems.FirstOrDefault(i => i.ProdId == tempProdId);
         if (existing != null) {
             existing.Qty += tempQty;
@@ -360,16 +358,13 @@ else
                 msg = "Verifique o cliente e os itens."; return;
             }
 
-            // Confirmação simples antes de baixar stock e emitir
             bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Deseja emitir esta fatura? Esta ação baixará o stock e não poderá ser desfeita.");
             if (!confirmed) return;
 
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
 
-            // 1. Atualiza o rascunho para garantir que as últimas alterações na tela sejam salvas
             await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate, items);
 
-            // 2. Emite a fatura (o Service tratará da baixa de stock e envio de email)
             await InvoiceService.EmitInvoiceAsync(InvoiceId);
 
             await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso!");

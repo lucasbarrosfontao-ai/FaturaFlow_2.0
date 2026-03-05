@@ -16,9 +16,9 @@ namespace FaturaFlow.Tests.Domain.ValueObjects
         }
 
         [Theory]
-        [InlineData("4700123")] // Sem hifen
-        [InlineData("470-123")]  // Falta digito
-        [InlineData("AAAA-BBB")] // Letras
+        [InlineData("4700123")] 
+        [InlineData("470-123")]  
+        [InlineData("AAAA-BBB")] 
         public void Deve_Lancar_Erro_Para_Formato_Invalido(string cpErrado)
         {
             Action acao = () => new PostalCode(cpErrado);

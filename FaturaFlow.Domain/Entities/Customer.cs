@@ -54,7 +54,6 @@ namespace FaturaFlow.Domain.Entities
             ZipCode = zipCode;
         }
 
-        // Soft Delete (Desativar)
         public void Deactivate()
         {
             IsActive = false;

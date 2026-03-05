@@ -26,7 +26,6 @@
         margin-bottom: 2rem;
     }
 
-    /* Cards de Indicadores (KPIs) */
     .ff-kpi-card {
         background: white;
         border: none;
@@ -52,7 +51,6 @@
         margin-bottom: 1rem;
     }
 
-    /* Estilização dos Gráficos */
     .ff-chart-card {
         background: white;
         border: none;
@@ -128,7 +126,7 @@ else
         }
         else
         {
-            <!-- ROW 1: KPI CARDS (Calculados a partir das listas existentes) -->
+            <!-- ROW 1: KPI CARDS  -->
             <div class="row g-4 mb-4">
                 <div class="col-md-4">
                     <div class="ff-kpi-card ff-kpi-blue">
@@ -218,7 +216,6 @@ else
 @code {
     private SalesAnalyticsDto? stats;
     
-    // Criei 3 opções diferentes para dar cores e estilos distintos a cada gráfico
     private ApexChartOptions<ChartDataPoint> optionsBar = new();
     private ApexChartOptions<ChartDataPoint> optionsArea = new();
     private ApexChartOptions<ChartDataPoint> optionsLine = new();
@@ -239,7 +236,6 @@ else
 
     private void ConfigurarGraficos()
     {
-        // Configuração Padrão para Moeda
         var yAxisConfig = new List<YAxis> { 
             new YAxis { 
                 Labels = new YAxisLabels { 
@@ -248,7 +244,6 @@ else
             } 
         };
 
-        // 24h - Gráfico de Barras em CIANO
         optionsBar = new ApexChartOptions<ChartDataPoint> {
             Chart = new Chart { Toolbar = new Toolbar { Show = false }, Animations = new Animations { Enabled = true } },
             Colors = new List<string> { "#00bcd4" },
@@ -256,7 +251,6 @@ else
             PlotOptions = new PlotOptions { Bar = new PlotOptionsBar { BorderRadius = 4 } }
         };
 
-        // 7 Dias - Gráfico de Área em AZUL
         optionsArea = new ApexChartOptions<ChartDataPoint> {
             Chart = new Chart { Toolbar = new Toolbar { Show = false } },
             Colors = new List<string> { "#0056b3" },
@@ -265,7 +259,6 @@ else
             Fill = new Fill { Type = FillType.Gradient, Gradient = new FillGradient { ShadeIntensity = 1, OpacityFrom = 0.7, OpacityTo = 0.2 } }
         };
 
-        // 12 Meses - Gráfico de Linha em AZUL ESCURO
         optionsLine = new ApexChartOptions<ChartDataPoint> {
             Chart = new Chart { Toolbar = new Toolbar { Show = true } },
             Colors = new List<string> { "#002d5b" },

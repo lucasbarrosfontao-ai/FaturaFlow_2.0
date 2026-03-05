@@ -4,7 +4,6 @@ namespace FaturaFlow.Domain.Entities
 {
     public class Invoice
     {
-        // Constantes para evitar Strings "mágicas" no código
         public const string StatusDraft = "Rascunho";
         public const string StatusIssued = "Emitida";
         public const string StatusPaid = "Paga";
@@ -42,13 +41,12 @@ namespace FaturaFlow.Domain.Entities
             Status = status;
         }
 
-        // Compatibilidade: construtor sem data (usado nos testes e locais que não fornecem a data)
         public Invoice(Guid customerId, string invoiceNumber, string status = StatusDraft)
         {
             Id = Guid.NewGuid();
             CustomerId = customerId;
             InvoiceNumber = invoiceNumber;
-            IssueDate = DateTime.Now; // Data fornecida para testes
+            IssueDate = DateTime.Now;
             Status = status;
         }
         
@@ -62,7 +60,6 @@ namespace FaturaFlow.Domain.Entities
             IssueDate = date;
         }
 
-        // Overload sem data para compatibilidade
         public void UpdateDetailsTest(Guid customerId, string invoiceNumber)
         {
             if (Status != StatusDraft)
@@ -101,7 +98,7 @@ namespace FaturaFlow.Domain.Entities
             Status = StatusIssued;
             if (finalDate.HasValue ) 
             {
-                ValidateNotFutureDate(finalDate.Value); // Reutiliza a validação aqui
+                ValidateNotFutureDate(finalDate.Value);
                 IssueDate = finalDate.Value;
             }
         }

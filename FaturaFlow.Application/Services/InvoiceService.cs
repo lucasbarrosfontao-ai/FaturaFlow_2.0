@@ -33,23 +33,18 @@ public class InvoiceService
     {
         try
         {
-            // 1. Validação Imediata de Data (Fail Fast)
             if (invoiceDate > DateTime.Now)
                 throw new Exception("A data da fatura não pode ser Futura.");
 
-            // 2. VERIFICAÇÃO DE DUPLICIDADE
-            // Antes de fazer qualquer coisa pesada, vê se o número já existe
             var existingInvoice = await _invoiceRepo.GetByInvoiceNumberAsync(invoiceNumber);
             if (existingInvoice != null)
             {
                 throw new Exception($"O número da fatura '{invoiceNumber}' já existe.");
             }
 
-            // 3. Buscas de Entidades
             var customer = await _customerRepo.GetByIdAsync(customerId)
                 ?? throw new Exception("Cliente não encontrado.");
 
-            // 4. Criação da Fatura
             var invoice = new Invoice(customerId, invoiceNumber, invoiceDate, Invoice.StatusDraft);
             
             foreach (var item in items)
@@ -60,13 +55,11 @@ public class InvoiceService
                 invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
             }
 
-            // 5. Salvar
             await _invoiceRepo.AddAsync(invoice);
             return invoice.Id;
         }
         catch (Exception ex)
         {
-            // Garante que o erro retornado para a tela seja limpo
             throw new Exception($"Erro ao criar rascunho: {ex.Message}");
         }
     }
@@ -75,30 +68,22 @@ public class InvoiceService
     {
         try
         {
-            // 1. Validação Imediata de Data
             if (invoiceDate > DateTime.Now)
                 throw new Exception("A data da fatura não pode ser Futura.");
 
-            // 2. VERIFICAÇÃO DE DUPLICIDADE NA EDIÇÃO (CORRIGIDO)
             var existingWithNumber = await _invoiceRepo.GetByInvoiceNumberAsync(invoiceNumber);
             
-            // Verifica se existe ALGUÉM com esse número
             if (existingWithNumber != null)
             {
-                // AQUI ESTAVA O ERRO:
-                // Precisamos verificar se a fatura encontrada é OUTRA fatura (ID diferente).
-                // Se o ID for igual, sou eu mesmo salvando meu próprio número, então pode passar.
                 if (existingWithNumber.Id != invoiceId)
                 {
                     throw new Exception($"O número da fatura '{invoiceNumber}' já está a ser usado em outra fatura.");
                 }
             }
 
-            // 3. Buscar Fatura Existente
             var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
                 ?? throw new Exception("Fatura não encontrada.");
 
-            // 4. Atualizar Dados
             invoice.UpdateDetails(customerId, invoiceNumber, invoiceDate); 
             invoice.ClearLines(); 
 
@@ -110,7 +95,6 @@ public class InvoiceService
                 invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
             }
 
-            // 5. Salvar
             await _invoiceRepo.UpdateAsync(invoice);
         }
         catch (Exception ex)
@@ -148,7 +132,6 @@ public class InvoiceService
         }
     }
 
-    // Método para marcar como paga (Para o botão que vimos no componente Blazor)
     public async Task MarkAsPaidAsync(Guid invoiceId)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
@@ -162,7 +145,6 @@ public class InvoiceService
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
             ?? throw new Exception("Fatura não encontrada.");
 
-        // Valida se o status é Rascunho usando a constante que definimos na entidade
         if (invoice.Status != Invoice.StatusDraft)
         {
             throw new Exception("Somente faturas em rascunho podem ser editadas.");

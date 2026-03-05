@@ -17,7 +17,6 @@ public class EmailSender : IEmailSender
         var user = _config["Email:User"]; 
         var pass = _config["Email:Pass"];
 
-        // No Mailtrap, o remetente pode ser qualquer e-mail que você inventar para teste
         string remetente = "no-reply@faturaflow.com"; 
 
         using var client = new SmtpClient(host, int.Parse(port ?? "2525"))
@@ -57,24 +56,20 @@ public class EmailSender : IEmailSender
             throw new ArgumentException("Tipo de documento inválido. Use 'Fatura' ou 'Recibo'.");
         }
 
-        // 2. Configuração do Cliente SMTP (Só fazemos uma vez)
         using var client = new SmtpClient(_config["Email:Host"], int.Parse(_config["Email:Port"] ?? "2525"))
         {
             Credentials = new NetworkCredential(_config["Email:User"], _config["Email:Pass"]),
             EnableSsl = true
         };
 
-        // 3. Criação da Mensagem
         using var mailMessage = new MailMessage(remetente, email, subject, body)
         {
             IsBodyHtml = true 
         };
 
-        // 4. Anexar o PDF
         using var ms = new MemoryStream(pdf);
         mailMessage.Attachments.Add(new Attachment(ms, nomeArquivo, "application/pdf"));
 
-        // 5. Enviar
         await client.SendMailAsync(mailMessage);
     }
 
