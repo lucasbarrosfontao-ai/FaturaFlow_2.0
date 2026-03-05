@@ -2,17 +2,123 @@
 @inject UserSession session
 @inject NavigationManager Navigation
 
+<style>
+/* --- CONFIGURAÇÕES DE CORES --- */
+:root {
+    --nav-fundo: #001a33;
+    --nav-cyan: #00daff;
+    --nav-cyan-dark: #004b57;
+    --nav-active-bg: #00daff;
+    --nav-active-text: #001a33;
+    --nav-text-white: #ffffff;
+}
+
+/* Container principal */
+.ff-nav-container {
+    background-color: var(--nav-fundo) !important;
+}
+
+/* Navbar topo */
+.ff-navbar {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* --- QUADRADINHOS DAS SEÇÕES --- */
+.ff-nav-section-wrapper {
+    padding: 20px 16px 8px 16px;
+}
+
+.ff-nav-section-box {
+    background-color: var(--nav-cyan-dark) !important;
+    color: var(--nav-cyan) !important;
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid rgba(0, 218, 255, 0.2);
+}
+
+/* --- LINKS DE NAVEGAÇÃO --- */
+.nav-item ::deep a, 
+.nav-item .nav-link {
+    color: var(--nav-text-white) !important; /* FORÇA BRANCO */
+    background: transparent;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    text-decoration: none !important;
+    font-weight: 400;
+}
+
+/* Ícones dos Links */
+.nav-item ::deep i, 
+.nav-item .nav-link i {
+    color: var(--nav-cyan) !important; /* ÍCONES SEMPRE CIANO */
+    margin-right: 12px;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* HOVER (Passar o mouse) */
+.nav-item ::deep a:hover,
+.nav-item .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--nav-cyan) !important;
+}
+
+/* ITEM ATIVO (Estilo igual ao da sua imagem do Dashboard) */
+.nav-item ::deep a.active,
+.nav-item .nav-link.active {
+    background-color: var(--nav-active-bg) !important;
+    color: var(--nav-active-text) !important; /* Texto escuro no fundo claro */
+    font-weight: 700 !important;
+}
+
+.nav-item ::deep a.active i,
+.nav-item .nav-link.active i {
+    color: var(--nav-active-text) !important; /* Ícone escuro no fundo claro */
+}
+
+/* --- BOTÃO SAIR --- */
+.ff-logout-btn {
+    background-color: rgba(255, 120, 120, 0.1) !important;
+    color: #ff8585 !important;
+    border: 1px solid rgba(255, 120, 120, 0.3) !important;
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px !important;
+    border-radius: 6px;
+}
+
+.ff-logout-btn:hover {
+    background-color: #ff5050 !important;
+    color: white !important;
+}
+
+.ff-logout-btn i {
+    color: #ff8585 !important;
+}
+
+.ff-logout-btn:hover i {
+    color: white !important;
+}
+
+</style>
 
 <div class="top-row ff-navbar navbar navbar-dark shadow-sm">
     <div class="container-fluid">
         <a class="navbar-brand ff-brand fw-bold d-flex align-items-center" href="">
-            <i class="bi bi-lightning-charge-fill me-2" style="color: var(--nav-cyan);"></i>
-            <span>FaturaFlow</span>
+            <i class="bi bi-lightning-charge-fill me-2" style="color: #00daff !important;"></i>
+            <span class="text-white">FaturaFlow</span>
         </a>
     </div>
 </div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable ff-nav-container" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column mt-2">
@@ -20,82 +126,89 @@
         <!-- SECÇÃO: PRINCIPAL -->
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
+                <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
             </NavLink>
         </div>
 
-        <div class="ff-nav-section-title">Gestão Operacional</div>
+        <div class="ff-nav-section-wrapper">
+            <div class="ff-nav-section-box">Gestão Operacional</div>
+        </div>
 
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="Fornecedores/Ver">
-                <i class="bi bi-truck me-2"></i> Fornecedores
+                <i class="bi bi-truck"></i> <span>Fornecedores</span>
             </NavLink>
         </div>
 
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="Clientes/Ver">
-                <i class="bi bi-people-fill me-2"></i> Clientes
+                <i class="bi bi-people-fill"></i> <span>Clientes</span>
             </NavLink>
         </div>
 
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="Produtos/Ver">
-                <i class="bi bi-box-seam me-2"></i> Inventário
+                <i class="bi bi-box-seam"></i> <span>Inventário</span>
             </NavLink>
         </div>
 
-        <div class="ff-nav-section-title">Documentação</div>
+        <div class="ff-nav-section-wrapper">
+            <div class="ff-nav-section-box">Documentação</div>
+        </div>
 
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="Faturas/Ver">
-                <i class="bi bi-files me-2"></i> Histórico Faturas
+                <i class="bi bi-files"></i> <span>Histórico Faturas</span>
             </NavLink>
         </div>
         
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="Faturas/Criar">
-                <i class="bi bi-plus-circle-fill me-2" style="color: var(--nav-cyan);"></i> Nova Fatura
+                <i class="bi bi-plus-circle-fill"></i> <span>Nova Fatura</span>
             </NavLink>
         </div>
 
-        <div class="ff-nav-section-title">Relatórios & BI</div>
+        <div class="ff-nav-section-wrapper">
+            <div class="ff-nav-section-box">Relatórios & BI</div>
+        </div>
 
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="Vendas/VisaoGeral">
-                <i class="bi bi-bar-chart-line-fill me-2"></i> Análise Vendas
+                <i class="bi bi-bar-chart-line-fill"></i> <span>Análise Vendas</span>
             </NavLink>
         </div>
         
-        <!-- SECÇÃO: SISTEMA & SEGURANÇA -->
-        <div class="ff-nav-section-title">Configurações</div>
+        <div class="ff-nav-section-wrapper">
+            <div class="ff-nav-section-box">Configurações</div>
+        </div>
 
         @if (session.IsLoggedIn)
         {
             <div class="nav-item px-2">
                 <NavLink class="nav-link" href="Empresa">
-                    <i class="bi bi-building-gear me-2"></i> Minha Empresa
+                    <i class="bi bi-building-gear"></i> <span>Minha Empresa</span>
                 </NavLink>
             </div>
 
             <div class="nav-item px-2">
                 <NavLink class="nav-link" href="Utilizadores/Ver">
-                    <i class="bi bi-shield-lock-fill me-2"></i> Utilizadores
+                    <i class="bi bi-shield-lock-fill"></i> <span>Utilizadores</span>
                 </NavLink>
             </div>
         }
 
         <div class="nav-item px-2">
             <NavLink class="nav-link" href="arquivo">
-                <i class="bi bi-archive-fill me-2" style="opacity: 0.7;"></i> Arquivo Morto
+                <i class="bi bi-archive-fill"></i> <span>Arquivo Morto</span>
             </NavLink>
         </div>
 
         <!-- BOTÃO SAIR -->
         @if (session.IsLoggedIn)
         {
-            <div class="nav-item px-2 mt-4">
-                <button class="nav-link btn btn-link w-100 text-start border-0 ff-logout-btn" @onclick="Logout">
-                    <i class="bi bi-power me-2"></i> Terminar Sessão
+            <div class="nav-item px-2 mt-4 mb-4">
+                <button class="nav-link ff-logout-btn" @onclick="Logout">
+                    <i class="bi bi-power"></i> <span>Terminar Sessão</span>
                 </button>
             </div>
         }
