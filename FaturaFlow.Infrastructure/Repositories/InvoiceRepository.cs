@@ -16,15 +16,19 @@ namespace FaturaFlow.Infrastructure.Repositories
 
         public async Task<Invoice?> GetByIdAsync(Guid id)
         {
-            // MAGIA 1: AsNoTracking()
-            // Faz com que o Service receba uma cópia "desconectada".
-            // Isto impede que o EF Core misture as linhas antigas com as novas na memória.
             return await _context.Invoices
                 .AsNoTracking() 
                 .Include(i => i.Lines)
                 .FirstOrDefaultAsync(i => i.Id == id);
         }
+        public async Task<Invoice?> GetByInvoiceNumberAsync(string invoiceNumber)
+        {
+            if (string.IsNullOrWhiteSpace(invoiceNumber)) 
+                return null;
 
+            return await _context.Invoices
+                .FirstOrDefaultAsync(i => i.InvoiceNumber == invoiceNumber);
+        }
         public async Task<IEnumerable<Invoice>> GetAllAsync()
         {
             return await _context.Invoices

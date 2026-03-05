@@ -1,5 +1,6 @@
 using FaturaFlow.Domain.Entities;
 using FaturaFlow.Domain.Interfaces;
+using FaturaFlow.Domain.ValueObjects;
 using FaturaFlow.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
@@ -20,6 +21,11 @@ namespace FaturaFlow.Infrastructure.Repositories
             return await _context.Suppliers.FindAsync(id);
         }
 
+        public async Task<Supplier?> GetByNIPCAsync(PersonalId nipc)
+        {
+            if (nipc == null) return null;
+            return await _context.Suppliers.FirstOrDefaultAsync(s => s.NIPC == nipc);
+        }
         public async Task<IEnumerable<Supplier>> GetAllAsync()
         {
             return await _context.Suppliers.ToListAsync();

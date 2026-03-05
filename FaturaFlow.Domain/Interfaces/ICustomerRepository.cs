@@ -12,5 +12,6 @@ namespace FaturaFlow.Domain.Interfaces
         Task UpdateAsync(Customer customer);
         Task DeactivateAsync(Guid id);
         Task ActiveAsync(Guid id);
+        Task<Customer?> GetByNifAsync(PersonalId nif); 
     }
 }

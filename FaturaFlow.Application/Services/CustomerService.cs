@@ -25,17 +25,40 @@ public class CustomerService
     {
         try 
         {
+            // 1. Criar os Value Objects (Valida formatos antes de ir ao banco)
             var personalId = new PersonalId(nif);
             var emailAddr = new EmailAddress(email);
             var phoneNum = new PhoneNumber(phone);
             var postal = new PostalCode(zipCode);
 
+            // 2. VERIFICAÇÃO DE DUPLICIDADE (A Correção)
+            // Busca no banco se já existe alguém com este NIF
+            var customerWithSameNif = await _customerRepo.GetByNifAsync(personalId); 
+
+            if (customerWithSameNif != null)
+            {
+                // Se estamos editando (tem ID), verificamos se o NIF encontrado pertence a OUTRO cliente
+                if (id.HasValue && id != Guid.Empty)
+                {
+                    if (customerWithSameNif.Id != id.Value)
+                    {
+                        throw new Exception("O NIPC já existe e pertence a outro cliente.");
+                    }
+                    // Se o ID for igual, significa que é o próprio cliente mantendo o NIF, então segue o baile.
+                }
+                else
+                {
+                    // Se é um cadastro novo e achou o NIF, bloqueia.
+                    throw new Exception("O NIPC já existe.");
+                }
+            }
+
+            // 3. Fluxo de Salvamento Normal
             if (id.HasValue && id != Guid.Empty)
             {
                 var existing = await _customerRepo.GetByIdAsync(id.Value) 
-                    ?? throw new Exception("Cliente não encontrado.");
+                    ?? throw new Exception("Cliente não encontrado para edição.");
                 
-                // ATUALIZAÇÃO: Agora chamamos o método da entidade para mudar os dados no objeto
                 existing.UpdateDetails(name, personalId, phoneNum, emailAddr, address, city, postal);
                 
                 await _customerRepo.UpdateAsync(existing); 
@@ -48,7 +71,8 @@ public class CustomerService
         }
         catch (Exception ex)
         {
-            // Captura erros de NIF duplicado ou validações dos Value Objects
+            // Se a exceção for a nossa de "NIPC já existe", ela cairá aqui e será repassada
+            // Isso impede o congelamento, pois agora o erro é controlado e retorna uma mensagem clara.
             throw new Exception($"Erro ao salvar cliente: {ex.Message}");
         }
     }

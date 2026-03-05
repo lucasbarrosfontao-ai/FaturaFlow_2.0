@@ -24,6 +24,12 @@ namespace FaturaFlow.Infrastructure.Repositories
         {
             return await _context.Customers.FirstOrDefaultAsync(c => c.Email == email);
         }
+        public async Task<Customer?> GetByNifAsync(PersonalId nif)
+        {
+            if (string.IsNullOrWhiteSpace(nif.Value))
+                return null;
+            return await _context.Customers.FirstOrDefaultAsync(c => c.NIF == nif);
+        }
 
         public async Task<IEnumerable<Customer>> GetAllAsync()
         {

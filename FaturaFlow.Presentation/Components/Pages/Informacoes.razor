@@ -1,0 +1,201 @@
+@page "/informacoes"
+@inject NavigationManager Navigation
+
+<style>
+    /* Reaproveitando as variáveis de cores do menu */
+    :root {
+        --ff-blue-dark: #001a33;
+        --ff-blue-medium: #00254d;
+        --ff-cyan: #00daff;
+        --ff-cyan-dark: #004b57;
+        --ff-white: #ffffff;
+    }
+
+    .info-page-container {
+        background-color: var(--ff-blue-dark);
+        min-height: 100vh;
+        color: var(--ff-white);
+        padding: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Cabeçalho */
+    .info-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+    }
+
+    .info-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .info-title i {
+        color: var(--ff-cyan);
+        font-size: 2rem;
+    }
+
+    .info-title h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    /* Botão Voltar (Estilo do Item Ativo do Menu) */
+    .btn-back {
+        background-color: var(--ff-cyan) !important;
+        color: var(--ff-blue-dark) !important;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: transform 0.2s;
+    }
+
+    .btn-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 218, 255, 0.4);
+        color: var(--ff-blue-dark);
+    }
+
+    /* Grid de Informações */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    /* Cards Estilizados */
+    .info-card {
+        background-color: var(--ff-blue-medium);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    /* Título da Seção (Estilo "Quadradinho" do Menu) */
+    .info-section-tag {
+        background-color: var(--ff-cyan-dark) !important;
+        color: var(--ff-cyan) !important;
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .info-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        font-weight: 500;
+        color: var(--ff-cyan);
+    }
+
+    .status-dot {
+        height: 10px;
+        width: 10px;
+        background-color: #28a745;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+</style>
+
+<div class="info-page-container">
+    
+    <!-- HEADER -->
+    <div class="info-header">
+        <div class="info-title">
+            <i class="bi bi-info-circle-fill"></i>
+            <h1>Informações do Sistema</h1>
+        </div>
+        <button class="btn-back" @onclick="Voltar">
+            <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+        </button>
+    </div>
+
+    <div class="info-grid">
+        
+        <!-- CARD: APLICAÇÃO -->
+        <div class="info-card">
+            <div class="info-section-tag">Aplicação</div>
+            <div class="info-item">
+                <span class="info-label">Nome:</span>
+                <span class="info-value">FaturaFlow</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Versão:</span>
+                <span class="info-value">2.0.0-stable</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Ambiente:</span>
+                <span class="info-value">Produção</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Última Atualização:</span>
+                <span class="info-value">@DateTime.Now.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+
+        <!-- CARD: SERVIDOR / BACKEND -->
+        <div class="info-card">
+            <div class="info-section-tag">Status do Backend</div>
+            <div class="info-item">
+                <span class="info-label">Banco de Dados:</span>
+                <span class="info-value"><span class="status-dot"></span> Conectado</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">API Status:</span>
+                <span class="info-value text-success">Online</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Framework:</span>
+                <span class="info-value">.NET 8.0</span>
+            </div>
+        </div>
+
+        <!-- CARD: DESENVOLVIMENTO -->
+        <div class="info-card">
+            <div class="info-section-tag">Desenvolvimento</div>
+            <p style="font-size: 0.9rem; line-height: 1.6; opacity: 0.8;">
+                FaturaFlow é uma plataforma integrada para gestão de faturamento e operacional, focada em performance e facilidade de uso para o utilizador final.
+            </p>
+            <div class="info-item">
+                <span class="info-label">Contactos:</span>
+                <span class="info-value">Email: lucasbarrosfontao@gmail.com, a36869@esccbvr.pt, lucashariel689@gmail.com</span>
+                <span class="info-value">Número: +351 966 605 093</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private void Voltar()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

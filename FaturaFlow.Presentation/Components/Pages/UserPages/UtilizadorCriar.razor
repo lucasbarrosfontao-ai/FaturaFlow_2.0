@@ -79,6 +79,11 @@
             }
             await AuthService.RegisterUserAsync(username, password, email);
             Navigation.NavigateTo("/Utilizadores/Ver");
-        } catch (Exception ex) { msg = ex.Message; }
+        } 
+        catch (Exception ex) 
+        { 
+            msg = ex.Message;
+            return;
+        }
     }
 }

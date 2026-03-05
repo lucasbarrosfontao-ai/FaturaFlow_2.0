@@ -158,7 +158,12 @@
             await ProductService.SaveProductAsync(Id, model.SupplierId, model.Name, model.Reference, 
                 model.PurchasePrice, model.SalePrice, model.VatRate, model.StockQuantity, model.UnitOfMeasure);
             Navigation.NavigateTo("/Produtos/Ver");
-        } catch (Exception ex) { errorMessage = ex.Message; }
+        } 
+        catch (Exception ex) 
+        { 
+            errorMessage = ex.Message;
+            return;
+        }
     }
 
     public class ProductFormModel {

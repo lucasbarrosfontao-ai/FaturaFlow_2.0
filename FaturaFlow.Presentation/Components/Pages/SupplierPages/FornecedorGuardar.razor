@@ -166,7 +166,12 @@
             errorMessage = "";
             await SupplierService.SaveSupplierAsync(Id, model.CompanyName, model.NIPC, model.RepresentativeName, model.Phone, model.Email, model.Address, model.City, model.ZipCode);
             Navigation.NavigateTo("/Fornecedores/Ver");
-        } catch (Exception ex) { errorMessage = ex.Message; }
+        } 
+        catch (Exception ex) 
+        { 
+            errorMessage = ex.Message;
+            
+        }
     }
 
     public class SupplierFormModel {

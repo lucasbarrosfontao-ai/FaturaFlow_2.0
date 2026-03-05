@@ -5,6 +5,7 @@ namespace FaturaFlow.Domain.Interfaces
     public interface IInvoiceRepository
     {
         Task<Invoice?> GetByIdAsync(Guid id);
+        Task<Invoice?> GetByInvoiceNumberAsync(string invoiceNumber);
         Task<IEnumerable<Invoice>> GetAllAsync();
         Task AddAsync(Invoice invoice);
         Task UpdateAsync(Invoice invoice);

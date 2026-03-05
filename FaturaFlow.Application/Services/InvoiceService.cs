@@ -31,49 +31,93 @@ public class InvoiceService
 
     public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
-        var customer = await _customerRepo.GetByIdAsync(customerId)
-            ?? throw new Exception("Cliente não encontrado.");
-
-        var invoice = new Invoice(customerId, invoiceNumber, invoiceDate, Invoice.StatusDraft);
-        if (invoiceDate > DateTime.Now)
-            throw new Exception("A data da fatura não pode ser Futura.");
-        foreach (var item in items)
+        try
         {
-            var product = await _productRepo.GetByIdAsync(item.productId)
-                ?? throw new Exception($"Produto {item.productId} não encontrado.");
-            
-            invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
-        }
+            // 1. Validação Imediata de Data (Fail Fast)
+            if (invoiceDate > DateTime.Now)
+                throw new Exception("A data da fatura não pode ser Futura.");
 
-        await _invoiceRepo.AddAsync(invoice);
-        return invoice.Id;
+            // 2. VERIFICAÇÃO DE DUPLICIDADE
+            // Antes de fazer qualquer coisa pesada, vê se o número já existe
+            var existingInvoice = await _invoiceRepo.GetByInvoiceNumberAsync(invoiceNumber);
+            if (existingInvoice != null)
+            {
+                throw new Exception($"O número da fatura '{invoiceNumber}' já existe.");
+            }
+
+            // 3. Buscas de Entidades
+            var customer = await _customerRepo.GetByIdAsync(customerId)
+                ?? throw new Exception("Cliente não encontrado.");
+
+            // 4. Criação da Fatura
+            var invoice = new Invoice(customerId, invoiceNumber, invoiceDate, Invoice.StatusDraft);
+            
+            foreach (var item in items)
+            {
+                var product = await _productRepo.GetByIdAsync(item.productId)
+                    ?? throw new Exception($"Produto {item.productId} não encontrado.");
+                
+                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+            }
+
+            // 5. Salvar
+            await _invoiceRepo.AddAsync(invoice);
+            return invoice.Id;
+        }
+        catch (Exception ex)
+        {
+            // Garante que o erro retornado para a tela seja limpo
+            throw new Exception($"Erro ao criar rascunho: {ex.Message}");
+        }
     }
-    public async Task<Guid> CreateDraftInvoiceAsyncTest(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
-        => await CreateDraftInvoiceAsync(customerId, invoiceNumber, invoiceDate, items);
 
     public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
-        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
-            ?? throw new Exception("Fatura não encontrada.");
-
-        // O próprio método da entidade já valida se é rascunho
-        invoice.UpdateDetails(customerId, invoiceNumber, invoiceDate); 
-        invoice.ClearLines(); 
-        if (invoiceDate > DateTime.Now)
-            throw new Exception("A data da fatura não pode ser Futura.");
-        foreach (var item in items)
+        try
         {
-            var product = await _productRepo.GetByIdAsync(item.productId)
-                ?? throw new Exception($"Produto {item.productId} não encontrado.");
+            // 1. Validação Imediata de Data
+            if (invoiceDate > DateTime.Now)
+                throw new Exception("A data da fatura não pode ser Futura.");
+
+            // 2. VERIFICAÇÃO DE DUPLICIDADE NA EDIÇÃO (CORRIGIDO)
+            var existingWithNumber = await _invoiceRepo.GetByInvoiceNumberAsync(invoiceNumber);
             
-            invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+            // Verifica se existe ALGUÉM com esse número
+            if (existingWithNumber != null)
+            {
+                // AQUI ESTAVA O ERRO:
+                // Precisamos verificar se a fatura encontrada é OUTRA fatura (ID diferente).
+                // Se o ID for igual, sou eu mesmo salvando meu próprio número, então pode passar.
+                if (existingWithNumber.Id != invoiceId)
+                {
+                    throw new Exception($"O número da fatura '{invoiceNumber}' já está a ser usado em outra fatura.");
+                }
+            }
+
+            // 3. Buscar Fatura Existente
+            var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+                ?? throw new Exception("Fatura não encontrada.");
+
+            // 4. Atualizar Dados
+            invoice.UpdateDetails(customerId, invoiceNumber, invoiceDate); 
+            invoice.ClearLines(); 
+
+            foreach (var item in items)
+            {
+                var product = await _productRepo.GetByIdAsync(item.productId)
+                    ?? throw new Exception($"Produto {item.productId} não encontrado.");
+                
+                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+            }
+
+            // 5. Salvar
+            await _invoiceRepo.UpdateAsync(invoice);
         }
-
-        await _invoiceRepo.UpdateAsync(invoice);
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao atualizar rascunho: {ex.Message}");
+        }
     }
-
-    public async Task UpdateDraftInvoiceAsyncTest(Guid invoiceId, Guid customerId, string invoiceNumber,DateTime invoiceDate, List<(Guid productId, int quantity)> items)
-        => await UpdateDraftInvoiceAsync(invoiceId, customerId, invoiceNumber, invoiceDate, items);
 
     public async Task EmitInvoiceAsync(Guid invoiceId)
     {

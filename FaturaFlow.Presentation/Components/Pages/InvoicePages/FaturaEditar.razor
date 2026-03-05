@@ -130,7 +130,7 @@ else
                             <label class="form-label small fw-bold text-secondary">Preço Unitário</label>
                             <div class="input-group ff-input-group">
                                 <span class="input-group-text bg-white border-0">€</span>
-                                <input type="number" class="form-control border-0 shadow-none" @bind="tempPrice" step="0.01" />
+                                <input type="number" class="form-control border-0 shadow-none" @bind="tempPrice" @readonly /> 
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -258,8 +258,6 @@ else
         if (!UserSession.IsLoggedIn) { Navigation.NavigateTo("/login"); return; }
 
         try {
-            // MELHORIA: Usar o método que já valida se o status é "Rascunho"
-            // Se a fatura já estiver "Emitida", o Service vai lançar uma Exception e cair no Catch abaixo
             invoice = await InvoiceService.GetInvoiceForEditAsync(InvoiceId);
 
             if (invoice != null) {
@@ -347,7 +345,12 @@ else
             
             await JSRuntime.InvokeVoidAsync("alert", "Rascunho atualizado com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
-        } catch (Exception ex) { msg = ex.Message; }
+        } 
+        catch (Exception ex) 
+        { 
+            msg = ex.Message;
+            return;
+        }
     }
 
     private async Task HandleEmitInvoice() {
@@ -371,6 +374,11 @@ else
 
             await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
-        } catch (Exception ex) { msg = ex.Message; }
+        }
+        catch (Exception ex) 
+        { 
+            msg = ex.Message;
+            return;
+        }
     }
 }

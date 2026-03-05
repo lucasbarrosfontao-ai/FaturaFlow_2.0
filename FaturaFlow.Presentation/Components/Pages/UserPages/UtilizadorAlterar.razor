@@ -110,13 +110,23 @@
             }
             await AuthService.UpdateUserAsync(Id, oldPass, newUsername, newEmail, newPass);
             Navigation.NavigateTo("/Utilizadores/Ver");
-        } catch (Exception ex) { msg = ex.Message; }
+        } 
+        catch (Exception ex) 
+        { 
+            msg = ex.Message;
+            return;
+        }
     }
 
     private async Task ForgotPassword() {
         try {
             await AuthService.RequestPasswordResetAsync(newEmail);
             Navigation.NavigateTo($"/Utilizadores/Recuperar/{newEmail}");
-        } catch (Exception ex) { msg = ex.Message; }
+        }
+        catch (Exception ex) 
+        { 
+            msg = ex.Message;
+            return;
+        }
     }
 }

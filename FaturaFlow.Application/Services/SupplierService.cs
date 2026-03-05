@@ -21,31 +21,55 @@ public class SupplierService
 
     public async Task<Supplier?> GetByIdAsync(Guid id) => await _supplierRepo.GetByIdAsync(id);
 
-    public async Task SaveSupplierAsync(Guid? id, string name, string nipc, string repName, string phone, string email, string address, string city, string zip)
+    public async Task SaveSupplierAsync(Guid? id, string companyName, string nipc, string representativeName, string phone, string email, string address, string city, string zipCode)
     {
         try 
         {
+            // 1. Criar Value Objects
             var nipcVo = new PersonalId(nipc);
-            var phoneVo = new PhoneNumber(phone);
             var emailVo = new EmailAddress(email);
-            var zipVo = new PostalCode(zip);
+            var phoneVo = new PhoneNumber(phone);
+            var postalVo = new PostalCode(zipCode);
 
+            // 2. VERIFICAÇÃO (Evita congelamento)
+            var existingSupplierWithNipc = await _supplierRepo.GetByNIPCAsync(nipcVo);
+
+            if (existingSupplierWithNipc != null)
+            {
+                // Se estamos editando
+                if (id.HasValue && id != Guid.Empty)
+                {
+                    // Se o ID encontrado no banco for DIFERENTE do ID que estamos editando
+                    if (existingSupplierWithNipc.Id != id.Value)
+                    {
+                        throw new Exception("O NIPC já existe e pertence a outro fornecedor.");
+                    }
+                }
+                else
+                {
+                    // Se é novo cadastro
+                    throw new Exception("O NIPC já existe.");
+                }
+            }
+
+            // 3. Salvar ou Atualizar
             if (id.HasValue && id != Guid.Empty)
             {
                 var existing = await _supplierRepo.GetByIdAsync(id.Value) 
                     ?? throw new Exception("Fornecedor não encontrado.");
-
-                existing.UpdateDetails(name, nipcVo, repName, phoneVo, emailVo, address, city, zipVo);
-                await _supplierRepo.UpdateAsync(existing);
+                
+                existing.UpdateDetails(companyName, nipcVo, representativeName, phoneVo, emailVo, address, city, postalVo);
+                await _supplierRepo.UpdateAsync(existing); 
             }
             else
             {
-                var newSupplier = new Supplier(name, nipcVo, repName, phoneVo, emailVo, address, city, zipVo);
+                var newSupplier = new Supplier(companyName, nipcVo, representativeName, phoneVo, emailVo, address, city, postalVo);
                 await _supplierRepo.AddAsync(newSupplier);
             }
         }
         catch (Exception ex)
         {
+            // Repassa a mensagem limpa para o Blazor exibir
             throw new Exception($"Erro ao salvar fornecedor: {ex.Message}");
         }
     }

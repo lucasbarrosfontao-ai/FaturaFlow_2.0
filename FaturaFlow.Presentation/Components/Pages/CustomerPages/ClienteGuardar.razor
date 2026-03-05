@@ -161,7 +161,12 @@
             errorMessage = "";
             await CustomerService.SaveCustomerAsync(Id, model.Name, model.NIF, model.Phone, model.Email, model.Address, model.City, model.ZipCode);
             Navigation.NavigateTo("/clientes/ver");
-        } catch (Exception ex) { errorMessage = ex.Message; }
+        } 
+        catch (Exception ex) 
+        { 
+            errorMessage = ex.Message;
+            return;
+        }
     }
 
     private void Cancel() => Navigation.NavigateTo("/clientes/ver");
