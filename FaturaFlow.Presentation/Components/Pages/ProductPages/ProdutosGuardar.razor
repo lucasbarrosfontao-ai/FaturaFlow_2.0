@@ -69,7 +69,17 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Unidade de Medida</label>
-                        <InputText @bind-Value="model.UnitOfMeasure" class="form-control ff-form-control" placeholder="un, kg, lt..." />
+                        <InputSelect @bind-Value="model.UnitOfMeasure" class="form-select ff-form-control">
+                            <option value="">Selecione uma unidade...</option>
+                            <option value="uni">Unidade (uni)</option>
+                            <option value="cax">Caixa (cax)</option>
+                            <option value="kg">Quilograma (kg)</option>
+                            <option value="g">Grama (g)</option>
+                            <option value="l">Litro (l)</option>
+                            <option value="ml">Mililitro (ml)</option>
+                            <option value="m">Metro (m)</option>
+                            <option value="mm">Milímetro (mm)</option>
+                        </InputSelect>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Stock Inicial</label>

@@ -35,7 +35,6 @@ namespace FaturaFlow.Infrastructure.Repositories
             catch (DbUpdateException ex)
             {
                 HandleDbException(ex);
-                
             }
         }
 
@@ -73,6 +72,11 @@ namespace FaturaFlow.Infrastructure.Repositories
                 product.Deactivate();
                 await _context.SaveChangesAsync();
             }
+        }
+        public async Task<Product?> GetByRefAsync(string refecence)
+        {
+            if (refecence == null) return null;
+            return await _context.Products.FirstOrDefaultAsync(p => p.Reference == refecence);
         }
     }
 }

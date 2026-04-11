@@ -50,7 +50,7 @@ public class PdfGeneratorService : IPdfService
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        if (company != null) 
+                        if (company != null && company.Name != "Sua Empresa") 
                         {
                             col.Item().Text(company.Name).FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
                             col.Item().Text($"NIF: {company.NIF?.Value ?? "N/A"}").FontSize(16);
@@ -62,7 +62,7 @@ public class PdfGeneratorService : IPdfService
                             col.Item().Text(endereco).FontSize(12).FontColor(Colors.Grey.Darken2);
                         }
                         else
-                        {
+                        {  
                             col.Item().Text("FaturaFlow").FontSize(24).SemiBold().FontColor(Colors.Blue.Medium);
                             col.Item().Text("O fluxo inteligente da sua gestão").FontSize(9).Italic().FontColor(Colors.Grey.Medium);
                         }
@@ -189,15 +189,22 @@ public class PdfGeneratorService : IPdfService
                 page.Margin(1, Unit.Centimetre);
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Verdana));
-
+                
                 // --- CABEÇALHO  ---
                 page.Header().Row(row =>
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        col.Item().Text(company?.Name ?? "FaturaFlow").FontSize(24).SemiBold().FontColor(Colors.Green.Medium);
-                        col.Item().Text($"NIF: {company?.NIF?.Value ?? "N/A"}").FontSize(14);
-                        col.Item().Text($"{company?.Address}, {company?.City}").FontSize(10).FontColor(Colors.Grey.Medium);
+                        if (company != null && company.Name != "Sua Empresa") 
+                        {
+                            col.Item().Text(company.Name).FontSize(24).SemiBold().FontColor(Colors.Green.Medium);
+                            col.Item().Text($"NIF: {company?.NIF?.Value ?? "N/A"}").FontSize(14);
+                            col.Item().Text($"{company?.Address}, {company?.City}").FontSize(10).FontColor(Colors.Grey.Medium);
+                        }
+                        else
+                        {
+                            col.Item().Text("Fatura Flow").FontSize(24).SemiBold().FontColor(Colors.Green.Medium);
+                        }
                     });
 
                     row.RelativeItem().AlignRight().Column(col =>

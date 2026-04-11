@@ -57,8 +57,6 @@ namespace FaturaFlow.Infrastructure.Repositories
             {
                 switch (mysqlEx.Number)
                 {
-                    case 1062:
-                        throw new Exception("Já existe uma empresa com este nome ou CNPJ.");
                     default:
                         throw new Exception("Ocorreu um erro ao acessar o banco de dados. Tente novamente mais tarde.");
                 }

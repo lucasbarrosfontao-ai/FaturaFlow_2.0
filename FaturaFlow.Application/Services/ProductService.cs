@@ -27,19 +27,35 @@ public class ProductService
             var pPrice = new Price(purchasePrice);
             var sPrice = new Price(salePrice);
             var vat = new VatRate(vatRate);
-
+            
+            var productwithsameref = await _productRepo.GetByRefAsync(reference);
+            if (productwithsameref != null)
+            {
+               
+                if (id.HasValue && id != Guid.Empty)
+                {
+                    if (productwithsameref.Id != id.Value)
+                    {
+                        throw new Exception("A Referencia já existe e pertence a outro produto.");
+                    }
+                }
+                else
+                {
+                    throw new Exception("A Referencia já existe.");
+                }
+            }
             if (id.HasValue && id != Guid.Empty)
             {
                 var existing = await _productRepo.GetByIdAsync(id.Value) 
                     ?? throw new Exception("Produto não encontrado.");
                 
-                existing.UpdateDetails(name, reference, unit, pPrice, sPrice, vat, stock, supplierId);
-                await _productRepo.UpdateAsync(existing);
+                existing.UpdateDetails(name, reference,unit,pPrice,sPrice,vat,stock,supplierId);
+                await _productRepo.UpdateAsync(existing); 
             }
             else
             {
-                var newProduct = new Product(name, reference, unit, pPrice, sPrice, vat, stock, supplierId);
-                await _productRepo.AddAsync(newProduct);
+                var newSupplier = new Product(name, reference,unit,pPrice,sPrice,vat,stock,supplierId);
+                await _productRepo.AddAsync(newSupplier);
             }
         }
         catch (Exception ex)
