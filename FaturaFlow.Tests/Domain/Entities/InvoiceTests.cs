@@ -74,5 +74,53 @@ namespace FaturaFlow.Tests.Domain.Entities
             invoice.TotalNet.Should().Be(0);
             invoice.TotalPayable.Should().Be(0);
         }
+        [Fact]
+        public void Nao_Deve_Permitir_Limpar_Linhas_De_Uma_Fatura_Emitida()
+        {
+            var invoice = new Invoice(Guid.NewGuid(), "FAT/6");
+            invoice.AddLine(Guid.NewGuid(), 1, new Price(100m), new VatRate(23m));
+            invoice.Issue();
+
+            Action acao = () => invoice.ClearLines();
+
+            acao.Should().Throw<InvalidOperationException>()
+                .WithMessage("Não é possível alterar itens de uma fatura já emitida.");
+        }
+        [Fact]
+        public void Nao_Deve_Permitir_Marcar_Como_Paga_Uma_Fatura_Nao_Emitida()
+        {
+            var invoice = new Invoice(Guid.NewGuid(), "FAT/7");
+
+            Action acao = () => invoice.MarkAsPaid();
+
+            acao.Should().Throw<InvalidOperationException>()
+                .WithMessage("Apenas faturas emitidas podem ser marcadas como pagas.");
+        }
+        [Fact]
+        public void Nao_Deve_Permitir_Cancelar_Uma_Fatura_Ja_Cancelada()
+        {
+            var invoice = new Invoice(Guid.NewGuid(), "FAT/8");
+            invoice.AddLine(Guid.NewGuid(), 1, new Price(100m), new VatRate(23m));
+            invoice.Issue();
+            invoice.Cancel();
+
+            Action acao = () => invoice.Cancel();
+
+            acao.Should().Throw<InvalidOperationException>()
+                .WithMessage("A fatura já está cancelada.");
+        }
+        [Fact]
+        public void Nao_Deve_Permitir_Cancelar_Uma_Fatura_Paga()
+        {
+            var invoice = new Invoice(Guid.NewGuid(), "FAT/9");
+            invoice.AddLine(Guid.NewGuid(), 1, new Price(100m), new VatRate(23m));
+            invoice.Issue();
+            invoice.MarkAsPaid();
+
+            Action acao = () => invoice.Cancel();
+
+            acao.Should().Throw<InvalidOperationException>()
+                .WithMessage("Não é possível cancelar uma fatura paga.");
+        }
     }
 }

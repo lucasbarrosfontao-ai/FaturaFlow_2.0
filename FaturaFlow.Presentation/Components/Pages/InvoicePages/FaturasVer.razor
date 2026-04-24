@@ -143,12 +143,18 @@ else
                                     <button class="btn btn-warning fw-bold" @onclick='() => Navigation.NavigateTo($"/faturas/editar/{selectedInvoice.Id}")'>
                                         <i class="bi bi-pencil-square me-2"></i>EDITAR RASCUNHO
                                     </button>
+                                    <button class="btn btn-danger fw-bold" @onclick="CancelarFatura">
+                                        <i class="bi bi-x-circle me-2"></i>CANCELAR FATURA
+                                    </button>
                                 }
                                 @if (selectedInvoice.Status == "Emitida") 
                                 {
                                     <button class="btn btn-success fw-bold" @onclick="LiquidarFatura">
                                         <i class="bi bi-cash-stack me-2"></i>MARCAR COMO PAGA
-                                    </button>    
+                                    </button>
+                                    <button class="btn btn-danger fw-bold" @onclick="CancelarFatura">
+                                        <i class="bi bi-x-circle me-2"></i>CANCELAR FATURA
+                                    </button>
                                 }
                                 <button class="btn btn-outline-light btn-sm" @onclick="EnviarEmail"><i class="bi bi-envelope me-2"></i>Enviar por Email</button>
                             </div>
@@ -186,6 +192,13 @@ else
     {
         if (selectedInvoice == null) return;
         await InvoiceService.MarkAsPaidAsync(selectedInvoice.Id);
+        invoices = (await InvoiceService.GetAllInvoicesAsync()).ToList();
+        selectedInvoice = invoices.FirstOrDefault(i => i.Id == selectedInvoice.Id);
+    }
+    private async Task CancelarFatura() 
+    {
+        if (selectedInvoice == null) return;
+        await InvoiceService.CancelInvoiceAsync(selectedInvoice.Id);
         invoices = (await InvoiceService.GetAllInvoicesAsync()).ToList();
         selectedInvoice = invoices.FirstOrDefault(i => i.Id == selectedInvoice.Id);
     }

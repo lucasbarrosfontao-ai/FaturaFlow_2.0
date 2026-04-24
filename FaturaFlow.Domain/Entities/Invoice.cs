@@ -109,6 +109,14 @@ namespace FaturaFlow.Domain.Entities
                 throw new InvalidOperationException("Apenas faturas emitidas podem ser marcadas como pagas.");
             Status = StatusPaid;
         }
+        public void Cancel()
+        {
+            if (Status == StatusCancelled)
+                throw new InvalidOperationException("A fatura já está cancelada.");
+            if (Status == StatusPaid)
+                throw new InvalidOperationException("Não é possível cancelar uma fatura paga.");
+            Status = StatusCancelled;
+        }
 
         private void RecalculateTotals()
         {

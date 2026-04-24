@@ -140,6 +140,14 @@ public class InvoiceService
         invoice.MarkAsPaid();
         await _invoiceRepo.UpdateAsync(invoice);
     }
+    public async Task CancelInvoiceAsync(Guid invoiceId)
+    {
+        var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
+            ?? throw new Exception("Fatura não encontrada.");
+
+        invoice.Cancel();
+        await _invoiceRepo.UpdateAsync(invoice);
+    }
     public async Task<Invoice> GetInvoiceForEditAsync(Guid invoiceId)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)

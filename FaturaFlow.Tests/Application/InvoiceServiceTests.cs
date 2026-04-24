@@ -98,5 +98,56 @@ namespace FaturaFlow.Tests.Application
             await acao.Should().ThrowAsync<Exception>().WithMessage("Esta fatura já foi emitida.");
             _productRepoMock.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
         }
+        [Fact]
+        public async Task MarkAsPaidAsync_Deve_Marcar_Fatura_Como_Paga()
+        {
+            var invoiceId = Guid.NewGuid();
+            var invoice = new Invoice(Guid.NewGuid(), "FAT-001", Invoice.StatusIssued);
+            _invoiceRepoMock.Setup(r => r.GetByIdAsync(invoiceId)).ReturnsAsync(invoice);
+
+            await _service.MarkAsPaidAsync(invoiceId);
+
+            invoice.Status.Should().Be(Invoice.StatusPaid);
+            _invoiceRepoMock.Verify(r => r.UpdateAsync(invoice), Times.Once);
+        }
+        [Fact]
+        public async Task CancelInvoiceAsync_Deve_Cancelar_Fatura()
+        {
+            var invoiceId = Guid.NewGuid();
+            var invoice = new Invoice(Guid.NewGuid(), "FAT-001", Invoice.StatusIssued);
+            _invoiceRepoMock.Setup(r => r.GetByIdAsync(invoiceId)).ReturnsAsync(invoice);
+
+            await _service.CancelInvoiceAsync(invoiceId);
+
+            invoice.Status.Should().Be(Invoice.StatusCancelled);
+            _invoiceRepoMock.Verify(r => r.UpdateAsync(invoice), Times.Once);
+        }
+        [Fact]
+        public async Task UpdateDraftInvoiceAsync_Deve_Atualizar_Rascunho_Quando_Dados_Sao_Validos()
+        {
+            var invoiceId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+
+            var invoice = new Invoice(customerId, "FAT-001", Invoice.StatusDraft);
+            invoice.AddLine(productId, 2, new Price(100), new VatRate(23));
+
+            _invoiceRepoMock.Setup(r => r.GetByIdAsync(invoiceId)).ReturnsAsync(invoice);
+
+            var product = new Product("Teclado", "T1", "Un", new Price(20), new Price(40), new VatRate(23), 10, Guid.NewGuid());
+            _productRepoMock.Setup(r => r.GetByIdAsync(productId)).ReturnsAsync(product);
+
+            var items = new List<(Guid, int)> { (productId, 3) };
+
+            await _service.UpdateDraftInvoiceAsync(invoiceId, customerId, "FAT-001-UPDATED", DateTime.Now, items);
+
+            invoice.CustomerId.Should().Be(customerId);
+            invoice.InvoiceNumber.Should().Be("FAT-001-UPDATED");
+            invoice.Lines.Should().HaveCount(1);
+            invoice.Lines.First().Quantity.Should().Be(3);
+
+            _invoiceRepoMock.Verify(r => r.UpdateAsync(invoice), Times.Once);
+        }
     }
+
 }
