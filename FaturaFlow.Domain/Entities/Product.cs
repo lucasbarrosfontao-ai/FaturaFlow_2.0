@@ -11,6 +11,8 @@ namespace FaturaFlow.Domain.Entities
         
         public Price PurchasePrice { get; private set; }
         public Price SalePrice { get; private set; }
+        public bool VatIncluded { get; private set; }
+        public Price PriceWithVat {get; private set; }
         public VatRate VatRate { get; private set; }
         
         public int StockQuantity { get; private set; }
@@ -19,7 +21,7 @@ namespace FaturaFlow.Domain.Entities
         #pragma warning disable CS8618 
         private Product () {}
         #pragma warning restore CS8618
-        public Product(string name, string reference, string unit, Price purchasePrice, Price salePrice, VatRate vatRate, int initialStock, Guid supplierId)
+        public Product(string name, string reference, string unit, Price purchasePrice, Price salePrice,bool vatIncluded, VatRate vatRate,Price priceWithVat, int initialStock, Guid supplierId)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new Exception("Nome obrigatório.");
             if (string.IsNullOrWhiteSpace(reference)) throw new Exception("Referência obrigatória.");
@@ -29,6 +31,16 @@ namespace FaturaFlow.Domain.Entities
             Reference = reference;
             UnitOfMeasure = unit;
             PurchasePrice = purchasePrice;
+            if (vatIncluded)
+            {
+                PriceWithVat = salePrice;
+                VatIncluded = true;
+            }
+            else
+            {
+                PriceWithVat = new Price(salePrice.Value * (1 + vatRate.Value / 100));
+                VatIncluded = false;
+            }
             SalePrice = salePrice;
             VatRate = vatRate;
             StockQuantity = initialStock;
@@ -39,7 +51,7 @@ namespace FaturaFlow.Domain.Entities
         public void AddStock(int quantity) => StockQuantity += quantity;
         public void RemoveStock(int quantity) => StockQuantity -= quantity;
 
-        public void UpdateDetails(string name, string reference, string unit, Price purchasePrice, Price salePrice, VatRate vat, int stock, Guid supplierId)
+        public void UpdateDetails(string name, string reference, string unit, Price purchasePrice, Price salePrice,bool vatIncluded, VatRate vat,Price pricewithvat, int stock, Guid supplierId)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new Exception("Nome obrigatório.");
             if (string.IsNullOrWhiteSpace(reference)) throw new Exception("Referência obrigatória.");
@@ -49,15 +61,35 @@ namespace FaturaFlow.Domain.Entities
             UnitOfMeasure = unit;
             PurchasePrice = purchasePrice;
             SalePrice = salePrice;
+            if (vatIncluded)
+            {
+                PriceWithVat = new Price(salePrice.Value);
+                VatIncluded = true;
+
+            }
+            else
+            {
+                PriceWithVat = new Price(salePrice.Value * (1 + vat.Value / 100));
+                VatIncluded = false;
+            }
             VatRate = vat;
             StockQuantity = stock;
             SupplierId = supplierId;
         }
 
-        public void UpdatePrices(Price purchase, Price sale)
+        public void UpdatePrices(Price purchase, Price sale, bool vatIncluded, VatRate vat)
         {
             PurchasePrice = purchase;
-            SalePrice = sale;
+            if (vatIncluded)
+            {
+                SalePrice = sale;
+                VatIncluded = true;
+            }
+            else
+            {
+                SalePrice = new Price(sale.Value * (1 + vat.Value / 100));
+                VatIncluded = false;
+            }
         }
         public void Deactivate()
         {

@@ -45,7 +45,7 @@ namespace FaturaFlow.Infrastructure.Data
                 entity.Property(p => p.PurchasePrice).HasConversion(v => v.Value, v => new Price(v));
                 entity.Property(p => p.SalePrice).HasConversion(v => v.Value, v => new Price(v));
                 entity.Property(p => p.VatRate).HasConversion(v => v.Value, v => new VatRate(v));
-            });
+                entity.Property(p => p.PriceWithVat).HasConversion(v => v.Value, v => new Price(v));            });
 
             // 4. Invoice e InvoiceLine
             modelBuilder.Entity<Invoice>(entity =>

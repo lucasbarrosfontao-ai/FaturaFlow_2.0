@@ -35,6 +35,7 @@ namespace FaturaFlow.Tests.Application
                 "KBD-001",
                 40.00m, // Purchase
                 80.00m, // Sale
+                                true,   // IsActive
                 23.0m,  // VAT
                 50,     // Stock
                 "Un"
@@ -50,7 +51,7 @@ namespace FaturaFlow.Tests.Application
             var productId = Guid.NewGuid();
             var existingProduct = new Product(
                 "Nome Antigo", "REF-0", "Un",
-                new Price(10), new Price(20), new VatRate(23), 10, Guid.NewGuid()
+                new Price(10), new Price(20), true, new VatRate(23), 10, Guid.NewGuid()
             );
 
             _productRepoMock.Setup(r => r.GetByIdAsync(productId)).ReturnsAsync(existingProduct);
@@ -62,6 +63,7 @@ namespace FaturaFlow.Tests.Application
                 "REF-0",
                 15.00m,
                 30.00m,
+                true,
                 23.0m,
                 20,
                 "Un"
@@ -77,7 +79,7 @@ namespace FaturaFlow.Tests.Application
         {
 
             Func<Task> acao = async () => await _service.SaveProductAsync(
-                null, Guid.NewGuid(), "Erro", "REF", -10.00m, 20.00m, 23.0m, 1, "Un"
+                null, Guid.NewGuid(), "Erro", "REF", -10.00m, 20.00m, true, 23.0m, 1, "Un"
             );
 
             await acao.Should().ThrowAsync<Exception>()
@@ -88,7 +90,7 @@ namespace FaturaFlow.Tests.Application
         public async Task DeactivateAsync_Deve_Mudar_Status_E_Gravar_No_Repositorio()
         {
             var productId = Guid.NewGuid();
-            var product = new Product("Teste", "R1", "Un", new Price(1), new Price(2), new VatRate(23), 5, Guid.NewGuid());
+            var product = new Product("Teste", "R1", "Un", new Price(1), new Price(2), true, new VatRate(23), 5, Guid.NewGuid());
 
             _productRepoMock.Setup(r => r.GetByIdAsync(productId)).ReturnsAsync(product);
 
@@ -101,8 +103,8 @@ namespace FaturaFlow.Tests.Application
         [Fact]
         public async Task GetAllActiveAsync_Deve_Filtrar_Apenas_Produtos_Ativos()
         {
-            var p1 = new Product("Ativo", "R1", "U", new Price(1), new Price(2), new VatRate(23), 1, Guid.NewGuid());
-            var p2 = new Product("Inativo", "R2", "U", new Price(1), new Price(2), new VatRate(23), 1, Guid.NewGuid());
+            var p1 = new Product("Ativo", "R1", "U", new Price(1), new Price(2), true, new VatRate(23), 1, Guid.NewGuid());
+            var p2 = new Product("Inativo", "R2", "U", new Price(1), new Price(2), true, new VatRate(23), 1, Guid.NewGuid());
             p2.Deactivate();
 
             var lista = new List<Product> { p1, p2 };

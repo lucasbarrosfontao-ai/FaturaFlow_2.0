@@ -29,7 +29,7 @@ public class InvoiceService
 
     public async Task<Invoice?> GetInvoiceByIdAsync(Guid id) => await _invoiceRepo.GetByIdAsync(id);
 
-    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
+    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, bool vatIncluded, decimal priceWithVat, List<(Guid productId, int quantity)> items)
     {
         try
         {
@@ -52,7 +52,7 @@ public class InvoiceService
                 var product = await _productRepo.GetByIdAsync(item.productId)
                     ?? throw new Exception($"Produto {item.productId} não encontrado.");
                 
-                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate, vatIncluded, priceWithVat);
             }
 
             await _invoiceRepo.AddAsync(invoice);
@@ -64,7 +64,7 @@ public class InvoiceService
         }
     }
 
-    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
+    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, bool vatIncluded, decimal priceWithVat, List<(Guid productId, int quantity)> items)
     {
         try
         {
@@ -92,7 +92,7 @@ public class InvoiceService
                 var product = await _productRepo.GetByIdAsync(item.productId)
                     ?? throw new Exception($"Produto {item.productId} não encontrado.");
                 
-                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate);
+                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate, vatIncluded, priceWithVat);
             }
 
             await _invoiceRepo.UpdateAsync(invoice);

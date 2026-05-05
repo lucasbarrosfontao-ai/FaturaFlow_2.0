@@ -43,7 +43,7 @@ namespace FaturaFlow.Tests.Application
             var customer = new Customer("Lucas", new PersonalId("123456789"), null, null, null, null, null);
             _customerRepoMock.Setup(r => r.GetByIdAsync(customerId)).ReturnsAsync(customer);
 
-            var product = new Product("PC", "REF1", "Un", new Price(500), new Price(1000), new VatRate(23), 10, Guid.NewGuid());
+            var product = new Product("PC", "REF1", "Un", new Price(500), new Price(1000),true, new VatRate(23), 10, Guid.NewGuid());
             _productRepoMock.Setup(r => r.GetByIdAsync(productId)).ReturnsAsync(product);
 
             var items = new List<(Guid, int)> { (productId, 2) };
@@ -67,7 +67,7 @@ namespace FaturaFlow.Tests.Application
 
             _invoiceRepoMock.Setup(r => r.GetByIdAsync(invoiceId)).ReturnsAsync(invoice);
 
-            var product = new Product("Mouse", "M1", "Un", new Price(10), new Price(20), new VatRate(23), 10, Guid.NewGuid());
+            var product = new Product("Mouse", "M1", "Un", new Price(10), new Price(20),true, new VatRate(23)   , 10, Guid.NewGuid());
             _productRepoMock.Setup(r => r.GetByIdAsync(productId)).ReturnsAsync(product);
 
             var customer = new Customer("Lucas", new PersonalId("123456789"), null, new EmailAddress("lucas@teste.com"), null, null, null);
@@ -134,7 +134,7 @@ namespace FaturaFlow.Tests.Application
 
             _invoiceRepoMock.Setup(r => r.GetByIdAsync(invoiceId)).ReturnsAsync(invoice);
 
-            var product = new Product("Teclado", "T1", "Un", new Price(20), new Price(40), new VatRate(23), 10, Guid.NewGuid());
+            var product = new Product("Teclado", "T1", "Un", new Price(20), new Price(40), true, new VatRate(23), 10, Guid.NewGuid());
             _productRepoMock.Setup(r => r.GetByIdAsync(productId)).ReturnsAsync(product);
 
             var items = new List<(Guid, int)> { (productId, 3) };

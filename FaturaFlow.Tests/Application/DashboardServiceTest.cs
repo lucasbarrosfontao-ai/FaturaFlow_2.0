@@ -49,8 +49,8 @@ namespace FaturaFlow.Tests.Application
 
             _invoiceRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Invoice> { inv1, inv2 });
 
-            var p1 = new Product("P1", "R1", "Un", new Price(10), new Price(20), new VatRate(23), 2, Guid.NewGuid());
-            var p2 = new Product("P2", "R2", "Un", new Price(10), new Price(20), new VatRate(23), 10, Guid.NewGuid()); 
+            var p1 = new Product("P1", "R1", "Un", new Price(10), new Price(20), true, new VatRate(23), 2, Guid.NewGuid());
+            var p2 = new Product("P2", "R2", "Un", new Price(10), new Price(20), true, new VatRate(23), 10, Guid.NewGuid()); 
 
             _productRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Product> { p1, p2 });
 

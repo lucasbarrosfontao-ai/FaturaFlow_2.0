@@ -16,6 +16,7 @@ namespace FaturaFlow.Tests.Domain.Entities
                 "Un",
                 new Price(800.00m),  
                 new Price(1200.00m), 
+                true,   // IsActive
                 new VatRate(23.0m),
                 stockInicial,
                 Guid.NewGuid()
@@ -40,7 +41,7 @@ namespace FaturaFlow.Tests.Domain.Entities
             Action acao = () => new Product(
                 nome, refInput, "Un",
                 new Price(10), new Price(20),
-                new VatRate(23), 0, Guid.NewGuid()
+                true, new VatRate(23), 0, Guid.NewGuid()
             );
 
             acao.Should().Throw<Exception>();
@@ -73,7 +74,7 @@ namespace FaturaFlow.Tests.Domain.Entities
             var novoPrecoCompra = new Price(900.00m);
             var novoPrecoVenda = new Price(1350.00m);
 
-            produto.UpdatePrices(novoPrecoCompra, novoPrecoVenda);
+            produto.UpdatePrices(novoPrecoCompra, novoPrecoVenda, true, new VatRate(23));
 
             produto.PurchasePrice.Value.Should().Be(900.00m);
             produto.SalePrice.Value.Should().Be(1350.00m);

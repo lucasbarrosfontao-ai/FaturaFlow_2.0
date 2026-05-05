@@ -39,7 +39,9 @@
     .ff-detail-card { border: 1px solid #e2e8f0; border-radius: 12px; background: white; overflow: hidden; }
     .ff-detail-header { background: #f8fafc; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
     .ff-product-code { font-family: 'Monaco', monospace; font-size: 0.75rem; color: var(--ff-blue); background: #eef2f7; padding: 2px 6px; border-radius: 4px; }
-    
+    .bg-rascunho { background-color: #fef08a !important; color: #854d0e !important; }
+    .bg-emitida { background-color: #bfdbfe !important; color: #1e3a8a !important; }
+    .bg-paga { background-color: #bbf7d0 !important; color: #166534 !important; }
     .ff-total-summary { background: var(--ff-dark-blue); color: white; padding: 1.5rem; border-radius: 0 0 12px 12px; }
 </style>
 
@@ -156,7 +158,10 @@ else
                                         <i class="bi bi-x-circle me-2"></i>CANCELAR FATURA
                                     </button>
                                 }
-                                <button class="btn btn-outline-light btn-sm" @onclick="EnviarEmail"><i class="bi bi-envelope me-2"></i>Enviar por Email</button>
+                                @if (selectedInvoice.Status != "Cancelada")
+                                {
+                                    <button class="btn btn-outline-light btn-sm" @onclick="EnviarEmail"><i class="bi bi-envelope me-2"></i>Enviar por Email</button>
+                                }
                             </div>
                         </div>
                     </div>

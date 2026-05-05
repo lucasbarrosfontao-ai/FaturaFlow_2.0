@@ -20,13 +20,14 @@ public class ProductService
 
     public async Task<Product?> GetByIdAsync(Guid id) => await _productRepo.GetByIdAsync(id);
 
-    public async Task SaveProductAsync(Guid? id, Guid supplierId, string name, string reference, decimal purchasePrice, decimal salePrice, decimal vatRate, int stock, string unit)
+    public async Task SaveProductAsync(Guid? id, Guid supplierId, string name, string reference, decimal purchasePrice, decimal salePrice,bool vatIncluded,decimal pricewithVat, decimal vatRate, int stock, string unit)
     {
         try 
         {
             var pPrice = new Price(purchasePrice);
             var sPrice = new Price(salePrice);
             var vat = new VatRate(vatRate);
+            var pricewithvat = new Price(pricewithVat);
             
             var productwithsameref = await _productRepo.GetByRefAsync(reference);
             if (productwithsameref != null)
@@ -49,12 +50,12 @@ public class ProductService
                 var existing = await _productRepo.GetByIdAsync(id.Value) 
                     ?? throw new Exception("Produto não encontrado.");
                 
-                existing.UpdateDetails(name, reference,unit,pPrice,sPrice,vat,stock,supplierId);
+                existing.UpdateDetails(name, reference,unit,pPrice,sPrice,vatIncluded,vat,pricewithvat,stock,supplierId);
                 await _productRepo.UpdateAsync(existing); 
             }
             else
             {
-                var newSupplier = new Product(name, reference,unit,pPrice,sPrice,vat,stock,supplierId);
+                var newSupplier = new Product(name, reference,unit,pPrice,sPrice,vatIncluded,vat,pricewithvat,stock,supplierId);
                 await _productRepo.AddAsync(newSupplier);
             }
         }

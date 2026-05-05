@@ -147,7 +147,7 @@ else
                                     </td>
                                     <td class="text-end">@item.Price.ToString("C2", new CultureInfo("pt-PT"))</td>
                                     <td class="text-end"><span class="text-muted small">(@p.VatRate.Value%)</span></td>
-                                    <td class="text-end fw-bold">@((item.Qty * item.Price).ToString("C2", new CultureInfo("pt-PT")))</td>
+                                    <td class="text-end fw-bold">@((item.PriceWithVat * item.Qty).ToString("C2", new CultureInfo("pt-PT")))</td>
                                     <td class="text-center">
                                         <button class="btn btn-outline-danger btn-sm border-0" @onclick="() => tempItems.Remove(item)" title="Remover item">
                                             <i class="bi bi-trash3-fill"></i>
@@ -227,8 +227,18 @@ else
     private int tempQty = 1;
     private decimal tempPrice = 0;
     private string msg = "";
+    
+    private bool vatIncluded = false;
+    private decimal priceWithVat = 0;
 
-    private class LocalItem { public Guid ProdId { get; set; } public int Qty { get; set; } public decimal Price { get; set; } }
+    private class LocalItem 
+    { 
+        public Guid ProdId { get; set; } 
+        public int Qty { get; set; } 
+        public decimal Price { get; set; } 
+        public decimal PriceWithVat { get; set; } 
+    }
+    
     private List<LocalItem> tempItems = new();
 
     protected override async Task OnInitializedAsync() 
@@ -249,27 +259,61 @@ else
     private void AddItemToList() 
     {
         if (tempProdId == Guid.Empty || tempQty <= 0) return;
-        tempItems.Add(new LocalItem { ProdId = tempProdId, Qty = tempQty, Price = tempPrice });
-        tempProdId = Guid.Empty; tempQty = 1; tempPrice = 0;
+        
+        // CORREÇÃO AQUI: Declaração da variável 'product' antes de a usar.
+        var product = products.First(p => p.Id == tempProdId);
+        
+        tempItems.Add(new LocalItem { 
+            ProdId = tempProdId, 
+            Qty = tempQty, 
+            Price = tempPrice, 
+            PriceWithVat = product.PriceWithVat.Value 
+        });
+        
+        tempProdId = Guid.Empty; 
+        tempQty = 1; 
+        tempPrice = 0;
     }
 
     private (decimal net, decimal vat, decimal total) CalculateTotal() 
     {
-        decimal n = 0; decimal v = 0;
-        foreach (var i in tempItems) {
-            var p = products.First(x => x.Id == i.ProdId);
-            n += i.Qty * i.Price;
-            v += (i.Qty * i.Price) * (p.VatRate.Value / 100);
+        // CORREÇÃO AQUI: Novo cálculo baseado em TotalBruto / IVA corretamente.
+        decimal totalNet = 0; 
+        decimal totalVat = 0; 
+        decimal totalGross = 0;
+
+        foreach (var item in tempItems) 
+        {
+            var p = products.First(x => x.Id == item.ProdId);
+            
+            decimal lineGross = item.Qty * item.PriceWithVat;
+            totalGross += lineGross;
+
+            decimal lineNet = p.VatIncluded 
+                ? lineGross / (1m + (p.VatRate.Value / 100m)) 
+                : item.Qty * item.Price;                     
+
+            decimal lineVat = lineGross - lineNet;
+
+            totalNet += lineNet;
+            totalVat += lineVat;
         }
-        return (n, v, n + v);
+        
+        return (totalNet, totalVat, totalGross);
     }
 
-     private async Task SaveDraft() 
+    private async Task SaveDraft() 
     {
         try {
             msg = "";
+            if (!tempItems.Any()) throw new Exception("Adicione pelo menos um artigo.");
+
+            // CORREÇÃO AQUI: Calcula e atualiza a variável "priceWithVat" da Fatura
+            var totals = CalculateTotal();
+            priceWithVat = totals.total;
+
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, items);
+            await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, vatIncluded, priceWithVat, items);
             
             await JSRuntime.InvokeVoidAsync("alert", "Rascunho guardado com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
@@ -277,7 +321,6 @@ else
         catch (Exception ex) 
         { 
             msg = ex.Message;
-            return;
         }
     }
 
@@ -285,9 +328,15 @@ else
     {
         try {
             msg = "";
+            if (!tempItems.Any()) throw new Exception("Adicione pelo menos um artigo.");
+
+            // CORREÇÃO AQUI: Calcula e atualiza a variável "priceWithVat" da Fatura
+            var totals = CalculateTotal();
+            priceWithVat = totals.total;
+
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
             
-            var id = await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber,invoiceDate, items);
+            var id = await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, vatIncluded, priceWithVat, items);
             await InvoiceService.EmitInvoiceAsync(id);
 
             await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso e stock atualizado!");
@@ -296,7 +345,6 @@ else
         catch (Exception ex) 
         { 
             msg = ex.Message;
-            return;
         }
     }
 }

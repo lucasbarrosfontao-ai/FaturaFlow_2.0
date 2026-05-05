@@ -77,12 +77,12 @@ namespace FaturaFlow.Domain.Entities
             RecalculateTotals();
         }
 
-        public void AddLine(Guid productId, int quantity, Price unitPrice, VatRate vatRate)
+        public void AddLine(Guid productId, int quantity, Price unitPrice, VatRate vatRate, bool vatIncluded, decimal priceWithVat)
         {
             if (Status != StatusDraft)
                 throw new InvalidOperationException("Não é possível adicionar itens a uma fatura já emitida.");
-
-            var line = new InvoiceLine(Id, productId, quantity, unitPrice, vatRate);
+            
+            var line = new InvoiceLine(Id, productId, quantity, unitPrice, vatRate, priceWithVat, vatIncluded);
             _lines.Add(line);
             RecalculateTotals();
         }

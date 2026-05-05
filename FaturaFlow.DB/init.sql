@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS Products (
     Reference VARCHAR(50) UNIQUE,
     Description TEXT,
     PurchasePrice DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    VatIncluded BOOLEAN NOT NULL DEFAULT False,
+    PriceWithVat DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     SalePrice DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     UnitOfMeasure VARCHAR(20),
     VatRate DECIMAL(5, 2) NOT NULL DEFAULT 0.00,

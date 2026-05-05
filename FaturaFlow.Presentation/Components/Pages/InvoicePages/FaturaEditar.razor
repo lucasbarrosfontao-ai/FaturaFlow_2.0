@@ -250,7 +250,8 @@ else
     private decimal tempPrice = 0;
     private string msg = "";
     private bool isLoading = true;
-
+    private bool vatIncluded = false;
+    private decimal priceWithVat = 0;
     private class LocalItem { public Guid ProdId { get; set; } public int Qty { get; set; } public decimal Price { get; set; } }
     private List<LocalItem> tempItems = new();
 
@@ -339,7 +340,7 @@ else
             }
 
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate, items);
+            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate,vatIncluded, priceWithVat,  items);
             
             await JSRuntime.InvokeVoidAsync("alert", "Rascunho atualizado com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
@@ -363,7 +364,7 @@ else
 
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
 
-            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate, items);
+            await InvoiceService.UpdateDraftInvoiceAsync(InvoiceId, selectedCustomerId, invoiceNumber, invoiceDate,vatIncluded, priceWithVat, items);
 
             await InvoiceService.EmitInvoiceAsync(InvoiceId);
 

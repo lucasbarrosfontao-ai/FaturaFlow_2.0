@@ -91,25 +91,34 @@
                 <div class="ff-section-title">Valores e Tributação</div>
                 <div class="ff-price-box">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold text-muted small">Preço de Custo</label>
                             <div class="input-group">
                                 <span class="input-group-text">€</span>
                                 <InputNumber @bind-Value="model.PurchasePrice" class="form-control border-start-0" step="0.01" />
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold text-primary small">Preço de Venda</label>
                             <div class="input-group">
                                 <span class="input-group-text border-primary text-primary">€</span>
                                 <InputNumber @bind-Value="model.SalePrice" class="form-control border-primary border-start-0" step="0.01" />
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold text-muted small">Taxa IVA (%)</label>
                             <div class="input-group">
                                 <InputNumber @bind-Value="model.VatRate" class="form-control border-end-0" />
                                 <span class="input-group-text border-start-0">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-center">
+                            <!-- Toggle (Switch) para a inclusão de IVA -->
+                            <div class="form-check form-switch mt-3 pt-2">
+                                <InputCheckbox @bind-Value="model.VatIncluded" class="form-check-input" id="vatIncludedSwitch" style="cursor:pointer;" />
+                                <label class="form-check-label fw-semibold small ms-2" for="vatIncludedSwitch" style="cursor:pointer;">
+                                    IVA incluído no Preço
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -143,6 +152,7 @@
     protected override async Task OnInitializedAsync() {
         if (!UserSession.IsLoggedIn) return;
         suppliers = (await SupplierService.GetAllActiveAsync()).ToList();
+
         if (Id.HasValue) {
             var p = await ProductService.GetByIdAsync(Id.Value);
             if (p != null) model = new() { 
@@ -150,6 +160,7 @@
                 UnitOfMeasure = p.UnitOfMeasure ?? "", StockQuantity = p.StockQuantity,
                 PurchasePrice = p.PurchasePrice.Value,
                 SalePrice = p.SalePrice.Value,
+                VatIncluded = p.VatIncluded, // <-- Aqui carregamos do produto caso estivessémos a editar
                 VatRate = p.VatRate.Value
             };
         }
@@ -165,8 +176,11 @@
                 bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "O Stock é negativo, deseja confirmar?");
                 if (!confirmed) return; 
             }
+
+            // <-- Adicionado o 'model.VatIncluded' no método da Service.
             await ProductService.SaveProductAsync(Id, model.SupplierId, model.Name, model.Reference, 
-                model.PurchasePrice, model.SalePrice, model.VatRate, model.StockQuantity, model.UnitOfMeasure);
+                model.PurchasePrice, model.SalePrice, model.VatIncluded,model.PriceWithVat, model.VatRate, model.StockQuantity, model.UnitOfMeasure);
+
             Navigation.NavigateTo("/Produtos/Ver");
         } 
         catch (Exception ex) 
@@ -183,6 +197,8 @@
         public string UnitOfMeasure { get; set; } = "un";
         public decimal PurchasePrice { get; set; }
         public decimal SalePrice { get; set; }
+        public bool VatIncluded { get; set; } = false;
+        public decimal PriceWithVat { get; set; }
         public decimal VatRate { get; set; } = 23;
         public int StockQuantity { get; set; }
     }
