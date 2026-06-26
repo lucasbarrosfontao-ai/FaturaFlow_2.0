@@ -29,7 +29,7 @@ public class InvoiceService
 
     public async Task<Invoice?> GetInvoiceByIdAsync(Guid id) => await _invoiceRepo.GetByIdAsync(id);
 
-    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, bool vatIncluded, decimal priceWithVat, List<(Guid productId, int quantity)> items)
+    public async Task<Guid> CreateDraftInvoiceAsync(Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
         try
         {
@@ -52,7 +52,7 @@ public class InvoiceService
                 var product = await _productRepo.GetByIdAsync(item.productId)
                     ?? throw new Exception($"Produto {item.productId} não encontrado.");
                 
-                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate, vatIncluded, priceWithVat);
+                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate, product.VatIncluded, product.PriceWithVat.Value);
             }
 
             await _invoiceRepo.AddAsync(invoice);
@@ -64,7 +64,7 @@ public class InvoiceService
         }
     }
 
-    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, bool vatIncluded, decimal priceWithVat, List<(Guid productId, int quantity)> items)
+    public async Task UpdateDraftInvoiceAsync(Guid invoiceId, Guid customerId, string invoiceNumber, DateTime invoiceDate, List<(Guid productId, int quantity)> items)
     {
         try
         {
@@ -92,7 +92,7 @@ public class InvoiceService
                 var product = await _productRepo.GetByIdAsync(item.productId)
                     ?? throw new Exception($"Produto {item.productId} não encontrado.");
                 
-                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate, vatIncluded, priceWithVat);
+                invoice.AddLine(product.Id, item.quantity, product.SalePrice, product.VatRate, product.VatIncluded, product.PriceWithVat.Value);
             }
 
             await _invoiceRepo.UpdateAsync(invoice);
@@ -112,6 +112,7 @@ public class InvoiceService
             throw new Exception("Esta fatura já foi emitida.");
         if (invoice.IssueDate > DateTime.Now)
             throw new Exception("A data da fatura não pode ser Futura.");
+        
         foreach (var line in invoice.Lines) 
         {
             var product = await _productRepo.GetByIdAsync(line.ProductId)
@@ -140,6 +141,7 @@ public class InvoiceService
         invoice.MarkAsPaid();
         await _invoiceRepo.UpdateAsync(invoice);
     }
+
     public async Task CancelInvoiceAsync(Guid invoiceId)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
@@ -148,6 +150,7 @@ public class InvoiceService
         invoice.Cancel();
         await _invoiceRepo.UpdateAsync(invoice);
     }
+
     public async Task<Invoice> GetInvoiceForEditAsync(Guid invoiceId)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)
@@ -160,6 +163,7 @@ public class InvoiceService
 
         return invoice;
     }
+
     public async Task SendEmailAsync(Guid invoiceId)
     {
         var invoice = await _invoiceRepo.GetByIdAsync(invoiceId)

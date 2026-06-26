@@ -9,7 +9,7 @@ COPY ["FaturaFlow.Domain/FaturaFlow.Domain.csproj", "FaturaFlow.Domain/"]
 COPY ["FaturaFlow.Infrastructure/FaturaFlow.Infrastructure.csproj", "FaturaFlow.Infrastructure/"]
 
 COPY ["FaturaFlow.Worker/FaturaFlow.Worker.csproj", "FaturaFlow.Worker/"]
-RUN dotnet restore "FaturaFlow.Worker/FaturaFlow.Worker.csproj"
+RUN dotnet restore "FaturaFlow.Worker/FaturaFlow.Worker.csproj" --disable-parallel
 
 # Copiar o resto do código
 COPY . .

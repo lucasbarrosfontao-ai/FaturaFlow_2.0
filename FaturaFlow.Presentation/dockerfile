@@ -8,9 +8,8 @@ COPY ["FaturaFlow.Application/FaturaFlow.Application.csproj", "FaturaFlow.Applic
 COPY ["FaturaFlow.Domain/FaturaFlow.Domain.csproj", "FaturaFlow.Domain/"]
 COPY ["FaturaFlow.Infrastructure/FaturaFlow.Infrastructure.csproj", "FaturaFlow.Infrastructure/"]
 
-RUN dotnet restore "FaturaFlow.Presentation/FaturaFlow.Presentation.csproj"
+RUN dotnet restore "FaturaFlow.Presentation/FaturaFlow.Presentation.csproj" --disable-parallel
 
-# Copiar o resto do código
 COPY . .
 WORKDIR "/src/FaturaFlow.Presentation"
 RUN dotnet publish "FaturaFlow.Presentation.csproj" -c Release -o /app/publish

@@ -227,9 +227,6 @@ else
     private int tempQty = 1;
     private decimal tempPrice = 0;
     private string msg = "";
-    
-    private bool vatIncluded = false;
-    private decimal priceWithVat = 0;
 
     private class LocalItem 
     { 
@@ -260,7 +257,6 @@ else
     {
         if (tempProdId == Guid.Empty || tempQty <= 0) return;
         
-        // CORREÇÃO AQUI: Declaração da variável 'product' antes de a usar.
         var product = products.First(p => p.Id == tempProdId);
         
         tempItems.Add(new LocalItem { 
@@ -277,7 +273,6 @@ else
 
     private (decimal net, decimal vat, decimal total) CalculateTotal() 
     {
-        // CORREÇÃO AQUI: Novo cálculo baseado em TotalBruto / IVA corretamente.
         decimal totalNet = 0; 
         decimal totalVat = 0; 
         decimal totalGross = 0;
@@ -308,12 +303,8 @@ else
             msg = "";
             if (!tempItems.Any()) throw new Exception("Adicione pelo menos um artigo.");
 
-            // CORREÇÃO AQUI: Calcula e atualiza a variável "priceWithVat" da Fatura
-            var totals = CalculateTotal();
-            priceWithVat = totals.total;
-
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
-            await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, vatIncluded, priceWithVat, items);
+            await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, items);
             
             await JSRuntime.InvokeVoidAsync("alert", "Rascunho guardado com sucesso!");
             Navigation.NavigateTo("/Faturas/Ver");
@@ -330,13 +321,9 @@ else
             msg = "";
             if (!tempItems.Any()) throw new Exception("Adicione pelo menos um artigo.");
 
-            // CORREÇÃO AQUI: Calcula e atualiza a variável "priceWithVat" da Fatura
-            var totals = CalculateTotal();
-            priceWithVat = totals.total;
-
             var items = tempItems.Select(x => (x.ProdId, x.Qty)).ToList();
             
-            var id = await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, vatIncluded, priceWithVat, items);
+            var id = await InvoiceService.CreateDraftInvoiceAsync(selectedCustomerId, invoiceNumber, invoiceDate, items);
             await InvoiceService.EmitInvoiceAsync(id);
 
             await JSRuntime.InvokeVoidAsync("alert", "Fatura emitida com sucesso e stock atualizado!");
